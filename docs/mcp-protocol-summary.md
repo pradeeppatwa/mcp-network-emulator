@@ -1,0 +1,15 @@
+
+
+**MCP Protocol — Core Concepts**
+
+The Model Context Protocol defines how AI agents communicate with external systems in a structured, standardised way. At its core, MCP involves three participants working together. The **Host** is the application the user directly interacts with — in this project that is Claude Desktop or VS Code Copilot. The Host is responsible for managing connections and deciding which servers to connect to. The **Client** lives inside the Host and handles the actual communication with the server — think of it as the Host's messenger. The **Server** is what this project builds — a Python process that exposes capabilities (tools, resources, prompts) to the AI agent through a well-defined interface.
+
+MCP communication is organised into two layers. The **Transport layer** handles the raw mechanics of how messages travel between client and server — either through stdio (standard input/output, used for local processes) or SSE (Server-Sent Events, used for remote connections over HTTP). The **Protocol layer** sits on top and defines the structure and meaning of those messages — using JSON-RPC 2.0 as the message format, handling requests, responses, and notifications in a consistent way regardless of which transport is used underneath.
+
+On the server side, MCP defines three primitives for exposing capabilities. **Tools** are functions the AI can call to perform actions — they take inputs, do something, and return a result. In this project, tools like `set_delay()` or `ping()` are the primary building blocks because the goal is to make things happen in the network, not just read state. **Resources** are read-only data sources the AI can access — similar to files or database records. They are appropriate for exposing static or slowly changing information, like a snapshot of the current network topology. The key distinction is that tools change state while resources only expose it. **Prompts** are reusable templates that guide the AI toward specific workflows — less relevant for this project since the AI clients handle prompting independently.
+
+On the client side, MCP also defines three primitives. **Sampling** allows the server to request the AI to generate text — useful for complex agentic workflows. **Roots** tell the server which parts of the filesystem the client has access to. **Elicitation** allows the server to ask the user for additional input mid-conversation. For this project, none of these three are heavily used — the project sits on the server side, exposing tools for the client to call, not the other way around.
+
+Finally, an important security note: MCP servers run as local processes with the same permissions as the user who starts them. This means a malicious or poorly written MCP server could cause real damage — deleting files, crashing the network, or worse. For this project, since the server controls live network emulation, it is important to validate all inputs carefully and never expose the server to untrusted clients.
+
+
