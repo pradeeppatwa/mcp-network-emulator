@@ -8,13 +8,25 @@ Three-layer architecture:
 - Layer 3: Emulation Backends — Containernet (wired) and Mininet-WiFi (wireless), managed in-process
 
 ## 2. Backend Management
-Pattern: In-process, single active backend.
-server.py runs as root and imports both backends directly.
-Two global state variables:
-  net = None
-  active_backend = None
-Only one backend active at a time.
-Rationale: Simpler, faster to implement, sufficient for a single-user research prototype.
+Pattern: In-process, single unified backend (ramonfontes/containernet).
+
+ramonfontes/containernet is a fork that combines Containernet Docker host support
+AND Mininet-WiFi wireless support in one unified backend. One net object handles
+Docker hosts, Docker WiFi stations, wired switches, and access points together.
+
+Single global state variable:
+  net = None   # live Containernet net object, set by create_topology()
+
+No active_backend variable needed - one backend handles everything.
+Rationale: Professor-approved unified approach. Simpler than two separate backends,
+no switching logic, no port conflicts, one import, one net.start() call.
+
+Imports:
+  from containernet.net import Containernet
+  from containernet.node import Docker, DockerSta
+  from mn_wifi.link import wmediumd
+
+Launch: sudo -E env PATH=$PATH python3 server.py
 
 ## 3. Topology Lifecycle
 States: IDLE -> create_topology() -> ACTIVE -> destroy_topology() -> IDLE
