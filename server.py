@@ -1,6 +1,25 @@
-from mcp.server.fastmcp import FastMCP
-import subprocess
+import sys
 import os
+import subprocess
+import time
+
+# Ensure containernet-wifi is findable when running as root
+sys.path.insert(0, '/home/pradeepp/pradeep/containernet-wifi')
+
+from mcp.server.fastmcp import FastMCP
+
+# Backend imports at module level
+try:
+    from containernet.net import Containernet
+    from containernet.node import Docker, DockerSta
+    from containernet.link import TCLink
+    from mininet.node import Controller
+    from mininet.log import setLogLevel
+    setLogLevel("warning")
+    BACKEND_AVAILABLE = True
+except ImportError as e:
+    BACKEND_AVAILABLE = False
+    print(f"Warning: Backend not available: {e}")
 
 # ─────────────────────────────────────────
 # GLOBAL STATE
@@ -33,12 +52,8 @@ def create_topology(topology_type: str, hosts: int = 2,
     if net is not None:
         raise ValueError("Topology already active. Call destroy_topology() first.")
 
-    from containernet.net import Containernet
-    from containernet.node import Docker, DockerSta
-    from containernet.link import TCLink
-    from mininet.node import Controller
-    from mininet.log import setLogLevel
-    setLogLevel("warning")
+    if not BACKEND_AVAILABLE:
+        raise ValueError("Backend not available. Check containernet-wifi installation.")
 
     net = Containernet(controller=Controller)
     net.addController("c0")
