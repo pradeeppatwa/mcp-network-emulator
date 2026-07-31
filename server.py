@@ -121,7 +121,7 @@ def create_topology(topology_type: str, hosts: int = 2,
     # Allow time for WiFi association to complete
     if topology_type in ["wireless", "hybrid"]:
         import time
-        time.sleep(5)
+        time.sleep(10)
 
     return (
         f"Topology created ({topology_type}): "
@@ -276,6 +276,18 @@ def set_channel(ap: str, channel: int) -> str:
     if "OK" not in result:
         raise ValueError(f"Channel switch failed: {result.strip()}")
     ap_node.params["channel"] = str(channel)
+
+    import time
+    time.sleep(2)
+
+    # Force stations to reconnect on new channel via wpa_cli reassociate
+    if hasattr(net, "stations"):
+        for sta in net.stations:
+            sta_wlan = sta.params.get("wlan", [None])[0]
+            if sta_wlan:
+                sta.cmd(f"wpa_cli -i {sta_wlan} reassociate")
+
+    time.sleep(5)
     return f"Channel {channel} set on {ap} (freq: {freq}MHz)."
 
 # ─────────────────────────────────────────
