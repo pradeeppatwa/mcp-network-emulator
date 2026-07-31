@@ -1,7 +1,11 @@
 from mcp.server.fastmcp import FastMCP
+import subprocess
+import os
 
-# Global state — single unified backend (ramonfontes/containernet)
-# Handles Docker hosts, Docker WiFi stations, wired switches, and APs
+# ─────────────────────────────────────────
+# GLOBAL STATE
+# ─────────────────────────────────────────
+
 net = None  # live Containernet net object
 
 def require_active_topology():
@@ -22,18 +26,114 @@ def create_topology(topology_type: str, hosts: int = 2,
     """Create and start a network topology.
     topology_type: wired, wireless, or hybrid.
     hosts/switches: used for wired. aps/stations: used for wireless."""
+    global net
+
     if topology_type not in ["wired", "wireless", "hybrid"]:
         raise ValueError("Invalid topology type. Use: wired, wireless, or hybrid.")
     if net is not None:
         raise ValueError("Topology already active. Call destroy_topology() first.")
-    return f"[MOCK] Would create {topology_type} topology: {hosts} hosts, {switches} switches, {aps} APs, {stations} stations."
+
+    from containernet.net import Containernet
+    from containernet.node import Docker, DockerSta
+    from containernet.link import TCLink
+    from mininet.node import Controller
+    from mininet.log import setLogLevel
+    setLogLevel("warning")
+
+    net = Containernet(controller=Controller)
+    net.addController("c0")
+
+    created = []
+
+    if topology_type in ["wired", "hybrid"]:
+        # Add wired switches
+        switch_list = []
+        for i in range(1, switches + 1):
+            s = net.addSwitch(f"s{i}")
+            switch_list.append(s)
+            created.append(f"s{i}")
+
+        # Add Docker hosts and link to first switch
+        for i in range(1, hosts + 1):
+            h = net.addDocker(
+                f"h{i}",
+                ip=f"10.0.0.{i}/8",
+                dimage="ramonfontes/bmv2"
+            )
+            net.addLink(h, switch_list[0], cls=TCLink)
+            created.append(f"h{i}")
+
+        # Chain switches if more than one
+        for i in range(len(switch_list) - 1):
+            net.addLink(switch_list[i], switch_list[i+1], cls=TCLink)
+
+    if topology_type in ["wireless", "hybrid"]:
+        # Add access points
+        ap_list = []
+        for i in range(1, aps + 1):
+            ap = net.addAccessPoint(
+                f"ap{i}",
+                ssid=f"net-ap{i}",
+                mode="g",
+                channel="1",
+                position=f"{50 * i},50,0"
+            )
+            ap_list.append(ap)
+            created.append(f"ap{i}")
+
+        # Add Docker WiFi stations
+        for i in range(1, stations + 1):
+            sta = net.addStation(
+                f"sta{i}",
+                ip=f"10.0.1.{i}/8",
+                position=f"{30 * i},30,0",
+                cls=DockerSta,
+                dimage="ramonfontes/bmv2"
+            )
+            created.append(f"sta{i}")
+
+        net.configureWifiNodes()
+
+        for i, sta_name in enumerate([f"sta{i}" for i in range(1, stations + 1)]):
+            net.addLink(net.get(sta_name), ap_list[0])
+
+    if topology_type == "hybrid":
+        # Connect wired switch to wireless AP
+        net.addLink(switch_list[0], ap_list[0], cls=TCLink)
+
+    net.start()
+
+    # Allow time for WiFi association to complete
+    if topology_type in ["wireless", "hybrid"]:
+        import time
+        time.sleep(5)
+
+    return (
+        f"Topology created ({topology_type}): "
+        f"{", ".join(created)}. "
+        f"Call destroy_topology() when done."
+    )
 
 @mcp.tool()
 def destroy_topology() -> str:
     """Stop and clean up the active topology. Resets all backend state."""
+    global net
+
     if net is None:
         raise ValueError("No active topology to destroy.")
-    return "[MOCK] Would destroy active topology and clean up backend."
+
+    net.stop()
+    net = None
+
+    # Clean up any leftover Docker containers
+    subprocess.run(
+        ["docker", "rm", "-f",
+         subprocess.run(["docker", "ps", "-aq"],
+                        capture_output=True, text=True).stdout.strip()],
+        capture_output=True
+    )
+
+    return "Topology destroyed. Backend cleaned up successfully."
 
 # ─────────────────────────────────────────
 # WIRED TOOLS (Containernet backend)
@@ -46,7 +146,18 @@ def set_delay(node1: str, node2: str, delay_ms: int) -> str:
     require_active_topology()
     if delay_ms < 0:
         raise ValueError("delay_ms must be >= 0.")
-    return f"[MOCK] Would set {delay_ms}ms delay on link {node1}<->{node2}."
+    n1 = net.get(node1)
+    n2 = net.get(node2)
+    if n1 is None:
+        raise ValueError(f"Node {node1} not found.")
+    if n2 is None:
+        raise ValueError(f"Node {node2} not found.")
+    links = n1.connectionsTo(n2)
+    if not links:
+        raise ValueError(f"No link found between {node1} and {node2}.")
+    links[0][0].config(delay=f"{delay_ms}ms")
+    links[0][1].config(delay=f"{delay_ms}ms")
+    return f"{delay_ms}ms delay set on link {node1}<->{node2}."
 
 @mcp.tool()
 def set_bandwidth(node1: str, node2: str, bw_mbps: float) -> str:
@@ -55,7 +166,18 @@ def set_bandwidth(node1: str, node2: str, bw_mbps: float) -> str:
     require_active_topology()
     if bw_mbps <= 0:
         raise ValueError("bw_mbps must be > 0.")
-    return f"[MOCK] Would set {bw_mbps}Mbps bandwidth on link {node1}<->{node2}."
+    n1 = net.get(node1)
+    n2 = net.get(node2)
+    if n1 is None:
+        raise ValueError(f"Node {node1} not found.")
+    if n2 is None:
+        raise ValueError(f"Node {node2} not found.")
+    links = n1.connectionsTo(n2)
+    if not links:
+        raise ValueError(f"No link found between {node1} and {node2}.")
+    links[0][0].config(bw=bw_mbps)
+    links[0][1].config(bw=bw_mbps)
+    return f"{bw_mbps}Mbps bandwidth set on link {node1}<->{node2}."
 
 @mcp.tool()
 def set_loss(node1: str, node2: str, loss_pct: float) -> str:
@@ -64,21 +186,59 @@ def set_loss(node1: str, node2: str, loss_pct: float) -> str:
     require_active_topology()
     if loss_pct < 0 or loss_pct > 100:
         raise ValueError("loss_pct must be between 0 and 100.")
-    return f"[MOCK] Would set {loss_pct}% packet loss on link {node1}<->{node2}."
+    n1 = net.get(node1)
+    n2 = net.get(node2)
+    if n1 is None:
+        raise ValueError(f"Node {node1} not found.")
+    if n2 is None:
+        raise ValueError(f"Node {node2} not found.")
+    links = n1.connectionsTo(n2)
+    if not links:
+        raise ValueError(f"No link found between {node1} and {node2}.")
+    links[0][0].config(loss=loss_pct)
+    links[0][1].config(loss=loss_pct)
+    return f"{loss_pct}% packet loss set on link {node1}<->{node2}."
 
 @mcp.tool()
 def ping(src: str, dst: str) -> str:
     """Run a ping test from src to dst and return RTT statistics.
     Returns min/avg/max RTT in milliseconds and packet loss percentage."""
     require_active_topology()
-    return f"[MOCK] Would ping {src}->{dst} and return RTT stats."
+    src_node = net.get(src)
+    dst_node = net.get(dst)
+    if src_node is None:
+        raise ValueError(f"Node {src} not found.")
+    if dst_node is None:
+        raise ValueError(f"Node {dst} not found.")
+    result = net.pingFull([src_node, dst_node])
+    if not result:
+        return f"Ping {src}->{dst}: no result returned."
+    # result shape: [(src, dst, (sent, received, min, avg, max, mdev)), ...]
+    stats = result[0][2]
+    sent, received = stats[0], stats[1]
+    rtt_min, rtt_avg, rtt_max = stats[2], stats[3], stats[4]
+    loss = 0 if sent == 0 else int((sent - received) / sent * 100)
+    return (
+        f"Ping {src}->{dst}: "
+        f"RTT min/avg/max = {rtt_min:.3f}/{rtt_avg:.3f}/{rtt_max:.3f}ms, "
+        f"{loss}% packet loss."
+    )
 
 @mcp.tool()
 def run_iperf(src: str, dst: str) -> str:
     """Measure TCP throughput between src and dst using iperf.
     Requires iperf and telnet installed in the container image."""
     require_active_topology()
-    return f"[MOCK] Would run iperf {src}->{dst} and return throughput."
+    src_node = net.get(src)
+    dst_node = net.get(dst)
+    if src_node is None:
+        raise ValueError(f"Node {src} not found.")
+    if dst_node is None:
+        raise ValueError(f"Node {dst} not found.")
+    result = net.iperf((src_node, dst_node))
+    if not result:
+        return f"Iperf {src}->{dst}: no result. Check iperf/telnet are installed in the container image."
+    return f"Iperf {src}->{dst}: {result[0]} transmit, {result[1]} receive."
 
 # ─────────────────────────────────────────
 # WIRELESS TOOLS (Mininet-WiFi backend)
@@ -92,8 +252,16 @@ def set_channel(ap: str, channel: int) -> str:
     require_active_topology()
     if channel < 1 or channel > 13:
         raise ValueError("channel must be between 1 and 13.")
+    ap_node = net.get(ap)
+    if ap_node is None:
+        raise ValueError(f"AP {ap} not found.")
     freq = 2407 + (channel * 5)
-    return f"[MOCK] Would switch {ap} to channel {channel} (freq: {freq}MHz)."
+    wlan = ap_node.params["wlan"][0]
+    result = ap_node.cmd(f"hostapd_cli -i {wlan} chan_switch 1 {freq}")
+    if "OK" not in result:
+        raise ValueError(f"Channel switch failed: {result.strip()}")
+    ap_node.params["channel"] = str(channel)
+    return f"Channel {channel} set on {ap} (freq: {freq}MHz)."
 
 # ─────────────────────────────────────────
 # RESOURCES (read-only topology state)
@@ -101,25 +269,45 @@ def set_channel(ap: str, channel: int) -> str:
 
 @mcp.resource("topology://nodes")
 def list_nodes() -> str:
-    """List all nodes in the active topology.
-    Returns hosts, switches, access points, and stations."""
+    """List all nodes in the active topology."""
     if net is None:
         return "No active topology."
-    return "[MOCK] Would return: Hosts: [h1,h2] Switches: [s1] APs: [ap1] Stations: [sta1,sta2]"
+    hosts = [h.name for h in net.hosts]
+    switches = [s.name for s in net.switches]
+    aps = [a.name for a in net.aps] if hasattr(net, "aps") else []
+    stations = [s.name for s in net.stations] if hasattr(net, "stations") else []
+    return (
+        f"Hosts: {hosts} | "
+        f"Switches: {switches} | "
+        f"APs: {aps} | "
+        f"Stations: {stations}"
+    )
 
 @mcp.resource("topology://links")
 def list_links() -> str:
-    """List all wired links with current TC settings (delay, bandwidth, loss)."""
+    """List all wired links in the active topology."""
     if net is None:
         return "No active topology."
-    return "[MOCK] Would return: h1<->s1: delay=0ms bw=unlimited loss=0%"
+    links = []
+    for link in net.links:
+        n1 = link.intf1.node.name
+        n2 = link.intf2.node.name
+        links.append(f"{n1}<->{n2}")
+    return "Links: " + ", ".join(links) if links else "No links found."
 
 @mcp.resource("topology://links/wifi")
 def list_wifi_links() -> str:
     """List all wireless associations between stations and access points."""
     if net is None:
         return "No active topology."
-    return "[MOCK] Would return: sta1->ap1: signal=-36dBm channel=5"
+    if not hasattr(net, "aps") or not net.aps:
+        return "No wireless nodes in active topology."
+    result = []
+    for ap in net.aps:
+        wlan = ap.params["wlan"][0]
+        dump = ap.cmd(f"iw dev {wlan} station dump")
+        result.append(f"AP {ap.name}: {dump.strip()}")
+    return "\n".join(result)
 
 @mcp.tool()
 def get_routing_table(node: str) -> str:
@@ -127,16 +315,29 @@ def get_routing_table(node: str) -> str:
     Filters out Docker bridge routes (172.17.0.0/16)."""
     if net is None:
         return "No active topology."
-    return f"[MOCK] Would return ip route output for {node}, filtered."
+    n = net.get(node)
+    if n is None:
+        raise ValueError(f"Node {node} not found.")
+    output = n.cmd("ip route")
+    filtered = [
+        line for line in output.splitlines()
+        if "172.17" not in line and line.strip()
+    ]
+    return f"Routing table for {node}:\n" + "\n".join(filtered)
 
 @mcp.tool()
 def get_wifi_stats(ap: str) -> str:
     """Return WiFi statistics for an access point.
-    Includes channel, connected stations, RSSI, and TX/RX rates.
-    Uses iw dev station dump internally."""
+    Includes channel, connected stations, RSSI, and TX/RX rates."""
     if net is None:
         return "No active topology."
-    return f"[MOCK] Would return iw station dump for {ap}."
+    ap_node = net.get(ap)
+    if ap_node is None:
+        raise ValueError(f"AP {ap} not found.")
+    wlan = ap_node.params["wlan"][0]
+    channel = ap_node.params.get("channel", "unknown")
+    dump = ap_node.cmd(f"iw dev {wlan} station dump")
+    return f"AP {ap} | Channel: {channel}\n{dump.strip()}"
 
 # ─────────────────────────────────────────
 # PROMPTS
