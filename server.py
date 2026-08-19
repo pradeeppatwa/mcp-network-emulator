@@ -263,31 +263,25 @@ def run_iperf(src: str, dst: str) -> str:
 def set_channel(ap: str, channel: int) -> str:
     """Change the WiFi channel of an access point.
     channel must be between 1 and 13 (2.4GHz).
-    Uses hostapd_cli chan_switch internally."""
+    Uses Mininet-WiFi native setChannel API for PHY-level channel reconfiguration."""
     require_active_topology()
     if channel < 1 or channel > 13:
         raise ValueError("channel must be between 1 and 13.")
     ap_node = net.get(ap)
     if ap_node is None:
         raise ValueError(f"AP {ap} not found.")
+
+    # Use Mininet-WiFi native API for channel switching
+    # This handles PHY-level reconfiguration correctly
+    # unlike raw hostapd_cli which causes station radio PHY teardown
+    ap_node.setChannel(channel)
+
+    # Update all associated stations to the new channel
+    for sta in net.stations:
+        if hasattr(sta, "wintfs") and sta.wintfs:
+            sta.wintfs[0].setChannel(channel)
+
     freq = 2407 + (channel * 5)
-    wlan = ap_node.params["wlan"][0]
-    result = ap_node.cmd(f"hostapd_cli -i {wlan} chan_switch 1 {freq}")
-    if "OK" not in result:
-        raise ValueError(f"Channel switch failed: {result.strip()}")
-    ap_node.params["channel"] = str(channel)
-
-    import time
-    time.sleep(2)
-
-    # Force stations to reconnect on new channel via wpa_cli reassociate
-    if hasattr(net, "stations"):
-        for sta in net.stations:
-            sta_wlan = sta.params.get("wlan", [None])[0]
-            if sta_wlan:
-                sta.cmd(f"wpa_cli -i {sta_wlan} reassociate")
-
-    time.sleep(5)
     return f"Channel {channel} set on {ap} (freq: {freq}MHz)."
 
 # ─────────────────────────────────────────
