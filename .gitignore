@@ -4,3 +4,7 @@ __pycache__/
 .env
 __pycache__/
 *.pyc
+h[0-9]*
+sta[0-9]*
+ap[0-9]*
+s[0-9]*

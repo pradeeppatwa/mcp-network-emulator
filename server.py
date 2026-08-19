@@ -311,9 +311,12 @@ def list_links() -> str:
         return "No active topology."
     links = []
     for link in net.links:
-        n1 = link.intf1.node.name
-        n2 = link.intf2.node.name
-        links.append(f"{n1}<->{n2}")
+        try:
+            n1 = link.intf1.node.name if hasattr(link.intf1, "node") else str(link.intf1)
+            n2 = link.intf2.node.name if hasattr(link.intf2, "node") else str(link.intf2)
+            links.append(f"{n1}<->{n2}")
+        except Exception:
+            pass
     return "Links: " + ", ".join(links) if links else "No links found."
 
 @mcp.resource("topology://links/wifi")
