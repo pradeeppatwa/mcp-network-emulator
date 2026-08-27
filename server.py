@@ -73,7 +73,7 @@ def create_topology(topology_type: str, hosts: int = 2,
             h = net.addDocker(
                 f"h{i}",
                 ip=f"10.0.0.{i}/8",
-                dimage="ramonfontes/bmv2"
+                dimage="mcp-network-node"
             )
             net.addLink(h, switch_list[0], cls=TCLink)
             created.append(f"h{i}")
@@ -103,7 +103,7 @@ def create_topology(topology_type: str, hosts: int = 2,
                 ip=f"10.0.1.{i}/8",
                 position=f"{30 * i},30,0",
                 cls=DockerSta,
-                dimage="ramonfontes/bmv2"
+                dimage="mcp-network-node"
             )
             created.append(f"sta{i}")
 
@@ -250,10 +250,32 @@ def run_iperf(src: str, dst: str) -> str:
         raise ValueError(f"Node {src} not found.")
     if dst_node is None:
         raise ValueError(f"Node {dst} not found.")
-    result = net.iperf((src_node, dst_node))
-    if not result:
-        return f"Iperf {src}->{dst}: no result. Check iperf/telnet are installed in the container image."
-    return f"Iperf {src}->{dst}: {result[0]} transmit, {result[1]} receive."
+    import time
+    # Start iperf server on dst
+    dst_node.cmd("pkill iperf 2>/dev/null; iperf -s -D")
+    time.sleep(1)
+
+    # Get dst IP address
+    dst_ip = dst_node.params.get("ip", "").split("/")[0].strip()
+    if not dst_ip:
+        import re
+        ip_out = dst_node.cmd("ip -4 addr show")
+        match = re.search(r"10\.\d+\.\d+\.\d+", ip_out)
+        dst_ip = match.group(0) if match else None
+        raise ValueError(f"Could not get IP address of {dst}")
+
+    # Run iperf client from src
+    result = src_node.cmd(f"iperf -c {dst_ip} -t 5")
+
+    # Clean up iperf server
+    dst_node.cmd("pkill iperf 2>/dev/null")
+
+    # Parse bandwidth from output
+    lines = [l for l in result.splitlines() if "Gbits" in l or "Mbits" in l]
+    if not lines:
+        return f"Iperf {src}->{dst}: test ran but could not parse output.\n{result}"
+    bandwidth = lines[-1].split()[-2] + " " + lines[-1].split()[-1]
+    return f"Iperf {src}->{dst}: throughput = {bandwidth}"
 
 # ─────────────────────────────────────────
 # WIRELESS TOOLS (Mininet-WiFi backend)
