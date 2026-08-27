@@ -1,0 +1,16 @@
+{
+  "servers": {
+    "network-emulator": {
+      "type": "stdio",
+      "command": "sudo",
+      "args": [
+        "python3",
+        "/home/pradeepp/pradeep/mcp-network-emulator/server.py"
+      ],
+      "env": {
+        "PATH": "/home/pradeepp/pradeep/mcp-network-emulator/venv/bin:/home/pradeepp/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "PYTHONPATH": "/home/pradeepp/pradeep/containernet-wifi"
+      }
+    }
+  }
+}
