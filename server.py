@@ -410,7 +410,11 @@ def get_wifi_stats(ap: str) -> str:
     if ap_node is None:
         raise ValueError(f"AP {ap} not found.")
     wlan = ap_node.params["wlan"][0]
-    channel = ap_node.params.get("channel", "unknown")
+    # Read channel from wintfs which reflects the current simulation state
+    if hasattr(ap_node, "wintfs") and ap_node.wintfs:
+        channel = ap_node.wintfs[0].channel
+    else:
+        channel = ap_node.params.get("channel", "unknown")
     dump = ap_node.cmd(f"iw dev {wlan} station dump")
     return f"AP {ap} | Channel: {channel}\n{dump.strip()}"
 
