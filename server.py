@@ -172,7 +172,34 @@ def set_delay(node1: str, node2: str, delay_ms: int) -> str:
     links = n1.connectionsTo(n2)
     if not links:
         raise ValueError(f"No link found between {node1} and {node2}.")
-    # Apply delay on one side only — applying both sides doubles the effective delay
+
+    from containernet.node import Docker
+    n1_is_switch = type(n1).__name__ == "OVSSwitch"
+    n2_is_switch = type(n2).__name__ == "OVSSwitch"
+
+    if n1_is_switch and n2_is_switch:
+        # OVS kernel datapath bypasses Linux tc netem on switch-to-switch links.
+        # Workaround: apply delay on all host-facing interfaces of both switches.
+        applied = []
+        # Apply on host-facing interfaces of n1 only (one side prevents doubling)
+        for intf in n1.intfs.values():
+            if intf.name == "lo" or intf.link is None:
+                continue
+            intf1_node = intf.link.intf1.node
+            intf2_node = intf.link.intf2.node
+            other = intf2_node if intf1_node == n1 else intf1_node
+            if type(other).__name__ in ["Docker", "DockerSta"]:
+                intf.config(delay=f"{delay_ms}ms")
+                applied.append(intf.name)
+        if applied:
+            return (
+                f"{delay_ms}ms delay set on host-facing interfaces {applied} "
+                f"(OVS switch-to-switch link — delay applied on host interfaces "
+                f"to bypass OVS kernel datapath limitation)."
+            )
+        raise ValueError(f"No host-facing interfaces found on {node1} or {node2}.")
+
+    # Standard case: host-to-switch link — apply on one side only
     links[0][0].config(delay=f"{delay_ms}ms")
     return f"{delay_ms}ms delay set on link {node1}<->{node2}."
 
