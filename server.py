@@ -112,7 +112,9 @@ def create_topology(topology_type: str, hosts: int = 2,
         net.configureWifiNodes()
 
         for i, sta_name in enumerate([f"sta{i}" for i in range(1, stations + 1)]):
-            net.addLink(net.get(sta_name), ap_list[0])
+            # Distribute stations across APs in round-robin order
+            target_ap = ap_list[i % len(ap_list)]
+            net.addLink(net.get(sta_name), target_ap)
 
     if topology_type == "hybrid":
         # Connect wired switch to wireless AP
