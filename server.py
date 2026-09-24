@@ -68,14 +68,16 @@ def create_topology(topology_type: str, hosts: int = 2,
             switch_list.append(s)
             created.append(f"s{i}")
 
-        # Add Docker hosts and link to first switch
+        # Add Docker hosts — distribute evenly across switches
         for i in range(1, hosts + 1):
             h = net.addDocker(
                 f"h{i}",
                 ip=f"10.0.0.{i}/8",
                 dimage="mcp-network-node"
             )
-            net.addLink(h, switch_list[0], cls=TCLink)
+            # Assign host to switch in round-robin order
+            target_switch = switch_list[(i - 1) % len(switch_list)]
+            net.addLink(h, target_switch, cls=TCLink)
             created.append(f"h{i}")
 
         # Chain switches if more than one
@@ -170,8 +172,8 @@ def set_delay(node1: str, node2: str, delay_ms: int) -> str:
     links = n1.connectionsTo(n2)
     if not links:
         raise ValueError(f"No link found between {node1} and {node2}.")
+    # Apply delay on one side only — applying both sides doubles the effective delay
     links[0][0].config(delay=f"{delay_ms}ms")
-    links[0][1].config(delay=f"{delay_ms}ms")
     return f"{delay_ms}ms delay set on link {node1}<->{node2}."
 
 @mcp.tool()
