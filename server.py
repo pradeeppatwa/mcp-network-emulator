@@ -43,12 +43,12 @@ def create_topology(topology_type: str, hosts: int = 2,
                     switches: int = 1, aps: int = 1,
                     stations: int = 2) -> str:
     """Create and start a network topology.
-    topology_type: wired, wireless, or hybrid.
+    topology_type: wired, wireless, hybrid, or mesh.
     hosts/switches: used for wired. aps/stations: used for wireless."""
     global net
 
-    if topology_type not in ["wired", "wireless", "hybrid"]:
-        raise ValueError("Invalid topology type. Use: wired, wireless, or hybrid.")
+    if topology_type not in ["wired", "wireless", "hybrid", "mesh"]:
+        raise ValueError("Invalid topology type. Use: wired, wireless, hybrid, or mesh.")
     if net is not None:
         raise ValueError("Topology already active. Call destroy_topology() first.")
 
@@ -120,10 +120,34 @@ def create_topology(topology_type: str, hosts: int = 2,
         # Connect wired switch to wireless AP
         net.addLink(switch_list[0], ap_list[0], cls=TCLink)
 
+    if topology_type == "mesh":
+        from mn_wifi.link import mesh as MeshLink
+        # Add mesh stations — regular Station nodes (not DockerSta)
+        # DockerSta is incompatible with mesh mode
+        for i in range(1, stations + 1):
+            sta = net.addStation(
+                f"sta{i}",
+                ip=f"10.0.2.{i}/8",
+                position=f"{40 * i},50,0"
+            )
+            created.append(f"sta{i}")
+
+        net.configureWifiNodes()
+
+        # Each station joins the same mesh network independently
+        for i in range(1, stations + 1):
+            net.addLink(
+                net.get(f"sta{i}"),
+                cls=MeshLink,
+                ssid="meshNet",
+                intf=f"sta{i}-wlan0",
+                channel=5
+            )
+
     net.start()
 
     # Allow time for WiFi association to complete
-    if topology_type in ["wireless", "hybrid"]:
+    if topology_type in ["wireless", "hybrid", "mesh"]:
         import time
         time.sleep(10)
 
