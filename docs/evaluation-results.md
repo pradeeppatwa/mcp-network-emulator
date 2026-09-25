@@ -84,3 +84,11 @@ No manual CLI commands used — all operations triggered by natural language pro
 - set_channel: ~1 second
 - get_wifi_stats: ~1 second
 - destroy_topology: ~3 seconds
+
+### UC4 — IEEE 802.11s Mesh Topology
+- Prompt: "Create a mesh topology with three wireless mesh nodes. Confirm that traffic can flow between sta1 and sta3 by running a ping through the mesh network."
+- Topology: sta1, sta2, sta3 (IEEE 802.11s mesh, channel 5, ssid meshNet)
+- Ping sta1->sta3: RTT = 0.269ms, 0% packet loss
+- Confirms: mesh topology creation and end-to-end traffic flow verified
+- Note: Regular Station nodes used (not DockerSta) — DockerSta incompatible with mesh mode
+- Link failure/rerouting documented as future work
