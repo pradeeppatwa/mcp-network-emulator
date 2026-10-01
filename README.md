@@ -86,3 +86,4 @@ Position-based RSSI confirmed: moving a station to position (100,100) caused RSS
 ## Licence
 
 MIT
+# Updated git config
