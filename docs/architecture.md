@@ -1,7 +1,4 @@
 # MCP Server Architecture
-## Project: MCP Server for Containernet and Mininet-WiFi
-## Frankfurt University of Applied Sciences | M.Eng. Information Technology
-## Supervisor: Prof. Dr. Armin Lehmann
 
 ---
 
@@ -212,3 +209,22 @@ Copilot spawns the MCP server as a subprocess and communicates via stdin
 and stdout directly. This requires no network port, no firewall configuration,
 and no HTTP server — simpler and more reliable for a single-machine
 research environment.
+
+---
+
+## 7. Error Handling
+
+Three error categories are handled explicitly:
+
+**State errors:** A tool is called before a topology exists. Returns:
+"No active topology. Call create_topology() first."
+This guides the AI to call create_topology() before any other tool.
+
+**Argument errors:** A node name does not exist in the active topology
+or a parameter value is out of range. Returns the available node names
+so the AI can correct the call immediately.
+
+**Backend errors:** The emulation itself fails — for example a Docker
+image not found or an OVS bridge conflict. The underlying error message
+is propagated in a structured response so the user knows exactly what
+failed.
