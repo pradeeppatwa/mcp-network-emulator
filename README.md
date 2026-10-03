@@ -103,7 +103,11 @@ mcp-network-emulator/
 ## Project Info
 
 **Student:** Pradeep Patwa
+
 **Programme:** M.Eng. Information Technology — Semester 3
+
 **University:** Frankfurt University of Applied Sciences
+
 **Supervisor:** Prof. Dr. Armin Lehmann
+
 **Duration:** 22-week Individual Project (5 credits)
