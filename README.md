@@ -1,89 +1,109 @@
 # MCP Server for Containernet and Mininet-WiFi
 
-A Model Context Protocol (MCP) server that enables AI clients (VS Code Copilot, Claude Desktop) to control network emulation environments through natural language.
+A natural language interface for network emulation — control and measure real network topologies using plain English through VS Code Copilot.
 
-## Project
+---
 
-**Title:** Design, Implementation and Evaluation of an MCP-Server for Containernet and Mininet-WiFi
-**University:** Frankfurt University of Applied Sciences
-**Programme:** Master of Engineering - Information Technology
-**Supervisor:** Prof. Dr. Armin Lehmann
+## What is this?
 
-## What it does
+This project builds a Model Context Protocol (MCP) server that connects AI clients (VS Code Copilot or Claude Desktop) to Containernet and Mininet-WiFi network emulation environments. Instead of writing Python scripts or running CLI commands manually, a researcher describes what they want in natural language and the AI automatically calls the right tools, executes the network operation, and reports the result.
 
-Instead of manually writing Python scripts or CLI commands to control emulated networks, you simply describe what you want in natural language. The AI client calls the appropriate MCP tools automatically.
+This is believed to be the first integration of MCP with Containernet and Mininet-WiFi network emulation environments.
 
-Example prompt:
-Create a hybrid topology with 3 hosts and a WiFi AP, run iperf between h1 and h3, report throughput
-
-The MCP server handles topology creation, link configuration, traffic measurement, and WiFi management from one natural language prompt.
+---
 
 ## Architecture
 
 Three-layer architecture:
-- Layer 1 - AI Client: VS Code Copilot / Claude Desktop
-- Layer 2 - MCP Server: server.py - exposes tools, resources, prompts via JSON-RPC 2.0 over stdio
-- Layer 3 - Unified Backend: ramonfontes/containernet (Docker + Mininet-WiFi combined)
 
-## Tools (10)
+- **Layer 1 — AI Client:** VS Code Copilot or Claude Desktop. Accepts natural language input and autonomously issues MCP tool calls.
+- **Layer 2 — MCP Server:** server.py exposes 10 tools, 3 resources, and 2 prompts via JSON-RPC 2.0 over stdio transport.
+- **Layer 3 — Unified Backend:** ramonfontes/containernet manages Docker hosts, OVS switches, WiFi stations, and access points in one process.
 
-| Tool | Description |
-|---|---|
-| create_topology | Create wired, wireless, or hybrid topology |
-| destroy_topology | Stop and clean up active topology |
-| set_delay | Apply link delay via tc netem |
-| set_bandwidth | Limit link bandwidth |
-| set_loss | Inject packet loss |
-| ping | Measure RTT between nodes |
-| run_iperf | Measure TCP throughput |
-| set_channel | Change WiFi AP channel |
-| get_routing_table | Read node routing table |
-| get_wifi_stats | Read AP WiFi statistics and RSSI |
+See [docs/architecture.md](docs/architecture.md) for full details.
 
-## Resources (3)
+---
 
-- topology://nodes - List all nodes
-- topology://links - List wired links
-- topology://links/wifi - List wireless associations
+## Prerequisites
 
-## Requirements
-
-- Ubuntu 24.04
-- Docker
-- ramonfontes/containernet
-- mac80211_hwsim kernel module
+- Ubuntu 24.04 LTS
 - Python 3.12
-- MCP SDK
+- Docker
+- Open vSwitch (OVS)
+- ramonfontes/containernet installed and on PYTHONPATH
 - VS Code with GitHub Copilot extension
+- Custom Docker image: mcp-network-node
 
-## Setup
+---
 
-Load wireless kernel module:
+## Quick Start
+
+```bash
 sudo modprobe mac80211_hwsim radios=4
-
-Start MCP server:
+cd mcp-network-emulator && source venv/bin/activate
 sudo python3 server.py
+```
 
-Configure VS Code Copilot by opening this project folder. The .vscode/mcp.json file configures the MCP server connection automatically.
+VS Code Copilot connects automatically via `.vscode/mcp.json`.
 
-## Docker Image
+Example prompt: `"Create a wired topology with 2 hosts and ping h1 to h2"`
 
-A custom Docker image is provided with iperf and telnet pre-installed:
-docker build -t mcp-network-node .
+---
 
 ## Evaluation Results
 
-All three use cases verified through VS Code Copilot Agent Mode:
+All 11 use cases verified through VS Code Copilot Agent Mode using natural language prompts only. No manual CLI commands used.
 
-| Use Case | Result |
-|---|---|
-| Wired link impairment + ping | RTT = 2.0ms, 0% loss |
-| WiFi channel optimisation | RSSI read, conditional channel switch |
-| Hybrid topology + iperf | Wired 14.1 Gbps, Wireless 18.6 Gbps |
+| Use Case | Description | Result |
+|----------|-------------|--------|
+| UC1a | Basic wired ping | RTT = 2.0ms ✅ |
+| UC1b | Delay on host interfaces | RTT = 205ms ✅ |
+| UC1c | Delay on switch-to-switch link | RTT = 205ms ✅ |
+| UC1d | Bandwidth + loss + routing table | All verified ✅ |
+| UC1e | Multi-switch iperf throughput | 10.8 Gbps ✅ |
+| UC2a | WiFi RSSI check, no channel change | Conditional reasoning correct ✅ |
+| UC2b | WiFi channel switch 1→11 | Stations remain connected ✅ |
+| UC2c | Multi-station wireless iperf | 7.92 Mbits/sec ✅ |
+| UC2d | Multi-AP station inventory | 2 stations per AP correct ✅ |
+| UC3a | Hybrid iperf wired→wireless | 1.22 Gbits/sec ✅ |
+| UC3b | Hybrid cross-segment delay | RTT 5ms → 102ms ✅ |
+| UC4 | IEEE 802.11s mesh topology | RTT = 0.269ms ✅ |
 
-Position-based RSSI confirmed: moving a station to position (100,100) caused RSSI to drop from -40 dBm to -72 dBm.
+See [docs/evaluation.md](docs/evaluation.md) for full results and prompts.
 
-## Licence
+---
 
-MIT
-# Updated git config
+## Project Structure
+
+```
+mcp-network-emulator/
+├── server.py              # MCP server — all 10 tools, 3 resources, 2 prompts
+├── Dockerfile             # Custom Docker image (mcp-network-node)
+├── .vscode/mcp.json       # VS Code Copilot MCP configuration
+├── tests/
+│   └── test_all_tools.py  # Verification script for all tools
+└── docs/
+    ├── architecture.md    # System architecture and technical decisions
+    ├── tools.md           # Tool and resource reference
+    └── evaluation.md      # Use case results and latency observations
+```
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/architecture.md) | Three-layer architecture, MCP flow, key decisions |
+| [Tools Reference](docs/tools.md) | All 10 tools, 3 resources, 2 prompts with examples |
+| [Evaluation](docs/evaluation.md) | All 11 use case results with prompts and measurements |
+
+---
+
+## Project Info
+
+**Student:** Pradeep Patwa
+**Programme:** M.Eng. Information Technology — Semester 3
+**University:** Frankfurt University of Applied Sciences
+**Supervisor:** Prof. Dr. Armin Lehmann
+**Duration:** 22-week Individual Project (5 credits)
