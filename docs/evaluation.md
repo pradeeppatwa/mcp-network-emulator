@@ -4,7 +4,7 @@
 
 ## Evaluation Approach
 
-All 11 use cases were evaluated exclusively through VS Code Copilot Agent Mode
+All 12 use cases were evaluated exclusively through VS Code Copilot Agent Mode
 using natural language prompts. No manual CLI commands, Python scripts, or
 direct API calls were used during evaluation. The AI client autonomously
 selected the appropriate MCP tools, determined the correct sequence of calls,
