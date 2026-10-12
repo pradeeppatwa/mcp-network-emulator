@@ -524,8 +524,9 @@ def link_impairment_test(node1: str, node2: str,
                          delay_ms: int = 50) -> str:
     """Reusable template for Use Case 1: link impairment and verification."""
     return (
-        f"Add {delay_ms}ms delay on the link between {node1} and {node2}, "
-        f"then ping from {host1} to {host2} and confirm the RTT increased."
+        f"First ping from {host1} to {host2} as a baseline. "
+        f"Then add {delay_ms}ms delay on the link between {node1} and {node2}, "
+        f"ping again and compare both round-trip times."
     )
 
 @mcp.prompt()
