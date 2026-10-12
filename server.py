@@ -2,6 +2,9 @@ import sys
 import os
 import subprocess
 import time
+import json
+import functools
+import inspect
 
 # Ensure containernet-wifi is findable when running as root
 sys.path.insert(0, '/home/pradeepp/pradeep/containernet-wifi')
@@ -54,10 +57,45 @@ def apply_tc(intf, **changes):
                 loss=loss)
 
 # ─────────────────────────────────────────
+# CALL LOG
+# ─────────────────────────────────────────
+
+LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs", "calls.jsonl")
+
+def logged(tool):
+    """Append one JSON line per tool call (name, arguments, status, duration, result)."""
+    @functools.wraps(tool)
+    def wrapper(*args, **kwargs):
+        started = time.time()
+        status, result = "ok", ""
+        try:
+            result = tool(*args, **kwargs)
+            return result
+        except Exception as e:
+            status, result = "error", str(e)
+            raise
+        finally:
+            try:
+                os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+                with open(LOG_FILE, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({
+                        "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+                        "tool": tool.__name__,
+                        "arguments": dict(inspect.signature(tool).bind_partial(*args, **kwargs).arguments),
+                        "status": status,
+                        "seconds": round(time.time() - started, 3),
+                        "result": str(result)[:300],
+                    }) + "\n")
+            except Exception:
+                pass   # logging must never break a tool
+    return wrapper
+
+# ─────────────────────────────────────────
 # TOPOLOGY LIFECYCLE TOOLS
 # ─────────────────────────────────────────
 
 @mcp.tool()
+@logged
 def create_topology(topology_type: str, hosts: int = 2,
                     switches: int = 1, aps: int = 1,
                     stations: int = 2) -> str:
@@ -177,6 +215,7 @@ def create_topology(topology_type: str, hosts: int = 2,
     )
 
 @mcp.tool()
+@logged
 def destroy_topology() -> str:
     """Stop and clean up the active topology. Resets all backend state."""
     global net
@@ -205,6 +244,7 @@ def destroy_topology() -> str:
 # ─────────────────────────────────────────
 
 @mcp.tool()
+@logged
 def set_delay(node1: str, node2: str, delay_ms: int) -> str:
     """Apply artificial delay on the link between node1 and node2.
     delay_ms must be >= 0. Uses tc netem via TCIntf.config()."""
@@ -252,6 +292,7 @@ def set_delay(node1: str, node2: str, delay_ms: int) -> str:
     return f"{delay_ms}ms delay set on link {node1}<->{node2}."
 
 @mcp.tool()
+@logged
 def set_bandwidth(node1: str, node2: str, bw_mbps: float) -> str:
     """Limit bandwidth on the link between node1 and node2.
     bw_mbps must be > 0. Uses tc via TCIntf.config()."""
@@ -272,6 +313,7 @@ def set_bandwidth(node1: str, node2: str, bw_mbps: float) -> str:
     return f"{bw_mbps}Mbps bandwidth set on link {node1}<->{node2}."
 
 @mcp.tool()
+@logged
 def set_loss(node1: str, node2: str, loss_pct: float) -> str:
     """Inject packet loss on the link between node1 and node2.
     loss_pct must be between 0 and 100."""
@@ -292,6 +334,7 @@ def set_loss(node1: str, node2: str, loss_pct: float) -> str:
     return f"{loss_pct}% packet loss set on link {node1}<->{node2}."
 
 @mcp.tool()
+@logged
 def ping(src: str, dst: str) -> str:
     """Run a ping test from src to dst and return RTT statistics.
     Returns min/avg/max RTT in milliseconds and packet loss percentage."""
@@ -317,6 +360,7 @@ def ping(src: str, dst: str) -> str:
     )
 
 @mcp.tool()
+@logged
 def run_iperf(src: str, dst: str) -> str:
     """Measure TCP throughput between src and dst using iperf.
     Requires iperf and telnet installed in the container image."""
@@ -359,6 +403,7 @@ def run_iperf(src: str, dst: str) -> str:
 # ─────────────────────────────────────────
 
 @mcp.tool()
+@logged
 def set_channel(ap: str, channel: int) -> str:
     """Change the WiFi channel of an access point.
     channel must be between 1 and 13 (2.4GHz).
@@ -433,6 +478,7 @@ def list_wifi_links() -> str:
     return "\n".join(result)
 
 @mcp.tool()
+@logged
 def get_routing_table(node: str) -> str:
     """Return the routing table of a specific node.
     Filters out Docker bridge routes (172.17.0.0/16)."""
@@ -449,6 +495,7 @@ def get_routing_table(node: str) -> str:
     return f"Routing table for {node}:\n" + "\n".join(filtered)
 
 @mcp.tool()
+@logged
 def get_wifi_stats(ap: str) -> str:
     """Return WiFi statistics for an access point.
     Includes channel, connected stations, RSSI, and TX/RX rates."""
