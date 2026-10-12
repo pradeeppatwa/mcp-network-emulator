@@ -5,6 +5,7 @@ import time
 import json
 import functools
 import inspect
+import re
 
 # Ensure containernet-wifi is findable when running as root
 sys.path.insert(0, '/home/pradeepp/pradeep/containernet-wifi')
@@ -487,7 +488,7 @@ def get_routing_table(node: str) -> str:
     n = net.get(node)
     if n is None:
         raise ValueError(f"Node {node} not found.")
-    output = n.cmd("ip route")
+    output = re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", n.cmd("ip route"))
     filtered = [
         line for line in output.splitlines()
         if "172.17" not in line and line.strip()
