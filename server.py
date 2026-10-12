@@ -19,7 +19,8 @@ try:
     BACKEND_AVAILABLE = True
 except ImportError as e:
     BACKEND_AVAILABLE = False
-    print(f"Warning: Backend not available: {e}")
+    # stdout carries the MCP protocol messages, so diagnostics go to stderr
+    print(f"Warning: Backend not available: {e}", file=sys.stderr)
 
 # ─────────────────────────────────────────
 # GLOBAL STATE
@@ -33,6 +34,24 @@ def require_active_topology():
         raise ValueError("No active topology. Call create_topology() first.")
 
 mcp = FastMCP("network-emulator")
+
+# Traffic-control settings that are active on each interface, stored by interface name.
+# Mininet deletes all rules of an interface whenever config() is called and rebuilds
+# only what that call asks for. Every tool that changes one setting therefore stores it
+# here and re-applies all settings of the interface together.
+iface_state = {}
+
+def apply_tc(intf, **changes):
+    """Store the new setting(s) of an interface and re-apply all of its settings."""
+    state = iface_state.setdefault(intf.name, {})
+    state.update(changes)
+    bw, delay, loss = state.get("bw"), state.get("delay"), state.get("loss")
+    if bw is None and not delay and not loss:
+        intf.tc("%s qdisc del dev %s root")   # nothing left to apply: remove all rules
+        return
+    intf.config(bw=bw,
+                delay=None if delay is None else f"{delay}ms",
+                loss=loss)
 
 # ─────────────────────────────────────────
 # TOPOLOGY LIFECYCLE TOOLS
@@ -167,14 +186,17 @@ def destroy_topology() -> str:
 
     net.stop()
     net = None
+    iface_state.clear()
 
-    # Clean up any leftover Docker containers
-    subprocess.run(
-        ["docker", "rm", "-f",
-         subprocess.run(["docker", "ps", "-aq"],
-                        capture_output=True, text=True).stdout.strip()],
-        capture_output=True
-    )
+    # Remove leftover containers created by Containernet. Containernet names its
+    # containers "mn.<node name>", so this filter leaves every other Docker
+    # container on the machine untouched. Each ID is passed as a separate argument.
+    leftover = subprocess.run(
+        ["docker", "ps", "-aq", "--filter", "name=^mn\\."],
+        capture_output=True, text=True
+    ).stdout.split()
+    if leftover:
+        subprocess.run(["docker", "rm", "-f", *leftover], capture_output=True)
 
     return "Topology destroyed. Backend cleaned up successfully."
 
@@ -215,7 +237,7 @@ def set_delay(node1: str, node2: str, delay_ms: int) -> str:
             intf2_node = intf.link.intf2.node
             other = intf2_node if intf1_node == n1 else intf1_node
             if type(other).__name__ in ["Docker", "DockerSta"]:
-                intf.config(delay=f"{delay_ms}ms")
+                apply_tc(intf, delay=delay_ms)
                 applied.append(intf.name)
         if applied:
             return (
@@ -226,7 +248,7 @@ def set_delay(node1: str, node2: str, delay_ms: int) -> str:
         raise ValueError(f"No host-facing interfaces found on {node1} or {node2}.")
 
     # Standard case: host-to-switch link — apply on one side only
-    links[0][0].config(delay=f"{delay_ms}ms")
+    apply_tc(links[0][0], delay=delay_ms)
     return f"{delay_ms}ms delay set on link {node1}<->{node2}."
 
 @mcp.tool()
@@ -245,8 +267,8 @@ def set_bandwidth(node1: str, node2: str, bw_mbps: float) -> str:
     links = n1.connectionsTo(n2)
     if not links:
         raise ValueError(f"No link found between {node1} and {node2}.")
-    links[0][0].config(bw=bw_mbps)
-    links[0][1].config(bw=bw_mbps)
+    apply_tc(links[0][0], bw=bw_mbps)
+    apply_tc(links[0][1], bw=bw_mbps)
     return f"{bw_mbps}Mbps bandwidth set on link {node1}<->{node2}."
 
 @mcp.tool()
@@ -265,8 +287,8 @@ def set_loss(node1: str, node2: str, loss_pct: float) -> str:
     links = n1.connectionsTo(n2)
     if not links:
         raise ValueError(f"No link found between {node1} and {node2}.")
-    links[0][0].config(loss=loss_pct)
-    links[0][1].config(loss=loss_pct)
+    apply_tc(links[0][0], loss=loss_pct)
+    apply_tc(links[0][1], loss=loss_pct)
     return f"{loss_pct}% packet loss set on link {node1}<->{node2}."
 
 @mcp.tool()
