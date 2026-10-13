@@ -172,7 +172,7 @@ and interpreted the results — demonstrating the core objective of the project.
 | Wireless | UC2a, UC2b, UC2c, UC2d       | 4/4 ✅      |
 | Hybrid   | UC3a, UC3b                   | 2/2 ✅      |
 | Mesh     | UC4                          | 1/1 ✅      |
-| **Total**| **11 use cases**             | **11/11 ✅** |
+| **Total**| **12 use cases**             | **12/12 ✅** |
 
 ---
 

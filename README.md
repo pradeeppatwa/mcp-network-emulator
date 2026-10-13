@@ -52,7 +52,7 @@ Example prompt: `"Create a wired topology with 2 hosts and ping h1 to h2"`
 
 ## Evaluation Results
 
-All 11 use cases verified through VS Code Copilot Agent Mode using natural language prompts only. No manual CLI commands used.
+All 12 use cases verified through VS Code Copilot Agent Mode using natural language prompts only. No manual CLI commands used.
 
 | Use Case | Description | Result |
 |----------|-------------|--------|
@@ -96,7 +96,7 @@ mcp-network-emulator/
 |----------|-------------|
 | [Architecture](docs/architecture.md) | Three-layer architecture, MCP flow, key decisions |
 | [Tools Reference](docs/tools.md) | All 10 tools, 3 resources, 2 prompts with examples |
-| [Evaluation](docs/evaluation.md) | All 11 use case results with prompts and measurements |
+| [Evaluation](docs/evaluation.md) | All 12 use case results with prompts and measurements |
 
 ---
 
