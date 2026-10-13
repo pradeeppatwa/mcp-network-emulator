@@ -384,7 +384,8 @@ def run_iperf(src: str, dst: str) -> str:
         ip_out = dst_node.cmd("ip -4 addr show")
         match = re.search(r"10\.\d+\.\d+\.\d+", ip_out)
         dst_ip = match.group(0) if match else None
-        raise ValueError(f"Could not get IP address of {dst}")
+        if not dst_ip:
+            raise ValueError(f"Could not get IP address of {dst}")
 
     # Run iperf client from src
     result = src_node.cmd(f"iperf -c {dst_ip} -t 5")
