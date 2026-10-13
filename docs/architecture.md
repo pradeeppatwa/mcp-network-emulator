@@ -7,7 +7,7 @@
 This project implements a three-layer architecture that connects an AI client
 to a real network emulation backend via the Model Context Protocol (MCP).
 The system enables a researcher to control and measure network topologies
-using natural language — no manual CLI commands or Python scripts required.
+using natural language and no manual CLI commands or Python scripts required.
 This is believed to be the first integration of MCP with Containernet and
 Mininet-WiFi network emulation environments.
 
