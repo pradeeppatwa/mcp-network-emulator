@@ -10,9 +10,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC1a: Basic Connectivity
 
-**Prompt:**
-
-1. Create a wired topology with 2 hosts and 1 switch, then ping from h1 to h2.
+**Prompt:** Create a wired topology with 2 hosts and 1 switch, then ping from h1 to h2.
 
 **Topology:** Two hosts (`h1`, `h2`) connected to one switch (`s1`).
 
@@ -26,9 +24,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC1b: Delay on Host-Facing Links
 
-**Prompt:**
-
-2. Create a topology with two switches and two hosts. Apply 50ms delay on h1-s1 and h2-s2. Ping from h1 to h2 and confirm RTT reflects the delay
+**Prompt:** Create a topology with two switches and two hosts. Apply 50ms delay on h1-s1 and h2-s2. Ping from h1 to h2 and confirm RTT reflects the delay
 
 **Topology:** Two hosts connected through two switches.
 
@@ -42,9 +38,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC1c: Delay on the Switch-to-Switch Link
 
-**Prompt:**
-
-3. Create a topology with two switches and two hosts. Add 100ms delay on the link between s1 and s2. Ping from h1 to h2 and tell me if the round-trip time reflects that delay.
+**Prompt:** Create a topology with two switches and two hosts. Add 100ms delay on the link between s1 and s2. Ping from h1 to h2 and tell me if the round-trip time reflects that delay.
 
 **Topology:** Two hosts connected through two switches.
 
@@ -58,9 +52,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC1d: Bandwidth, Packet Loss, and Routing Table
 
-**Prompt:**
-
-4. Create a wired topology with 2 hosts and 1 switch. Set 100Mbps bandwidth and 5% packet loss on h1-s1. Ping from h1 to h2 and show the routing table of h1.
+**Prompt:** Create a wired topology with 2 hosts and 1 switch. Set 100Mbps bandwidth and 5% packet loss on h1-s1. Ping from h1 to h2 and show the routing table of h1.
 
 **Topology:** Two hosts connected to one switch.
 
@@ -74,9 +66,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC1e: Topology Reporting and Throughput
 
-**Prompt:**
-
-5. Create a wired topology with 4 hosts and 2 switches. After creating the topology, show the actual topology, including all hosts, switches, and links. Then run an iperf throughput test between h1 and h3 and report the measured throughput.
+**Prompt:** Create a wired topology with 4 hosts and 2 switches. After creating the topology, show the actual topology, including all hosts, switches, and links. Then run an iperf throughput test between h1 and h3 and report the measured throughput.
 
 **Topology:** Four hosts connected through two switches.
 
@@ -92,9 +82,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC2a: RSSI Threshold Monitoring
 
-**Prompt:**
-
-6. Create a topology with one access point and two stations. Check signal strength. If any station RSSI is below -70dBm switch the channel
+**Prompt:** Create a topology with one access point and two stations. Check signal strength. If any station RSSI is below -70dBm switch the channel
 
 **Topology:** One access point and two wireless stations.
 
@@ -108,9 +96,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC2b: Wi-Fi Channel Switching
 
-**Prompt:**
-
-7. Create a wireless topology with one AP and two stations. Check WiFi channel and signal strength. Switch ap1 to channel 11 and verify stations remain connected.
+**Prompt:** Create a wireless topology with one AP and two stations. Check WiFi channel and signal strength. Switch ap1 to channel 11 and verify stations remain connected.
 
 **Topology:** One access point and two wireless stations.
 
@@ -124,9 +110,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC2c: Wireless Throughput Comparison
 
-**Prompt:**
-
-8. Create a wireless topology with one AP and three stations. Run iperf between sta1 and sta2, then sta1 and sta3. Compare throughput
+**Prompt:** Create a wireless topology with one AP and three stations. Run iperf between sta1 and sta2, then sta1 and sta3. Compare throughput
 
 **Topology:** One access point and three wireless stations.
 
@@ -141,9 +125,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC2d: Wi-Fi Station and Access-Point Statistics
 
-**Prompt:**
-
-9. Create a wireless topology with two APs and four stations, two per AP. Check WiFi stats on both APs and summarise which stations are connected to which AP and their signal strength.
+**Prompt:** Create a wireless topology with two APs and four stations, two per AP. Check WiFi stats on both APs and summarise which stations are connected to which AP and their signal strength.
 
 **Topology:** Two access points and four wireless stations, with two stations per access point.
 
@@ -160,9 +142,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC3a: Hybrid Network Throughput
 
-**Prompt:**
-
-10. Create a hybrid topology with two wired hosts on a switch and one AP with one station. Run iperf between h1 and sta1 and report throughput
+**Prompt:** Create a hybrid topology with two wired hosts on a switch and one AP with one station. Run iperf between h1 and sta1 and report throughput
 
 **Topology:** Two wired hosts connected to a switch, with an access point and one wireless station.
 
@@ -175,9 +155,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC3b: Delay and RTT Verification in a Hybrid Network
 
-**Prompt:**
-
-11. Create a hybrid topology. Ping h1 to sta1 for baseline RTT. Add 100ms delay on h1-s1. Ping again and confirm the RTT increased
+**Prompt:** Create a hybrid topology. Ping h1 to sta1 for baseline RTT. Add 100ms delay on h1-s1. Ping again and confirm the RTT increased
 
 **Topology:** A hybrid network containing wired and wireless nodes.
 
@@ -194,9 +172,7 @@ The evaluation covers topology creation, connectivity, link impairment, throughp
 
 ### UC4: Mesh Connectivity
 
-**Prompt:**
-
-12. Create a mesh topology with three wireless mesh nodes. Confirm that traffic can flow between sta1 and sta3 through the mesh network.
+**Prompt:** Create a mesh topology with three wireless mesh nodes. Confirm that traffic can flow between sta1 and sta3 through the mesh network.
 
 **Topology:** Three wireless mesh nodes.
 
