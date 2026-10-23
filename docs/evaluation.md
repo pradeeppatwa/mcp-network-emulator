@@ -110,6 +110,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 
 **Status: PASS** — The RSSI threshold was evaluated and no channel change was required.
 
+![UC2a: RSSI Threshold Monitoring](screenshots/2a.png)
+
 ### UC2b: Wi-Fi Channel Switching
 
 **Prompt:** Create a wireless topology with one AP and two stations. Check WiFi channel and signal strength. Switch ap1 to channel 11 and verify stations remain connected.
@@ -123,6 +125,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 - Both stations remained connected, with RSSI unchanged at −36 dBm.
 
 **Status: PASS** — The channel change and station connectivity were verified.
+
+![UC2b: Wi-Fi Channel Switching](screenshots/2b.png)
 
 ### UC2c: Wireless Throughput Comparison
 
@@ -139,6 +143,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 
 **Status: PASS** — Both throughput tests completed and their results were compared.
 
+![UC2c: Wireless Throughput Comparison](screenshots/2c.png)
+
 ### UC2d: Wi-Fi Station and Access-Point Statistics
 
 **Prompt:** Create a wireless topology with two APs and four stations, two per AP. Check WiFi stats on both APs and summarise which stations are connected to which AP and their signal strength.
@@ -153,6 +159,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 - All stations reported an RSSI of −36 dBm; both access points were on channel 1.
 
 **Status: PASS** — Station associations and Wi-Fi statistics were retrieved successfully.
+
+![UC2d: Wi-Fi Station and Access-Point Statistics](screenshots/2d.png)
 
 ## 3. Hybrid Network Use Cases
 
@@ -169,6 +177,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 
 **Status: PASS** — The hybrid topology was created and the throughput test completed.
 
+![UC3a: Hybrid Network Throughput](screenshots/3a.png)
+
 ### UC3b: Delay and RTT Verification in a Hybrid Network
 
 **Prompt:** Create a hybrid topology. Ping h1 to sta1 for baseline RTT. Add 100ms delay on h1-s1. Ping again and confirm the RTT increased
@@ -183,6 +193,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 - The RTT increased by approximately 96.5 ms.
 
 **Status: PASS** — The RTT increased substantially after the delay was applied.
+
+![UC3b: Delay and RTT Verification in a Hybrid Network](screenshots/3b.png)
 
 ## 4. Mesh Network Use Case
 
@@ -200,6 +212,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 
 **Status: PASS** — Connectivity between the endpoints was verified. The ping result alone does not establish that `sta2` forwarded the traffic as an intermediate relay.
 
+![UC4: Mesh Connectivity](screenshots/4.png)
+
 ## 5. MCP Natural-Language Prompt Tests
 
 In addition to the 12 use cases, two prompt-template tests were conducted through VS Code Copilot Agent Mode to evaluate predefined workflows for link impairment and Wi-Fi channel configuration.
@@ -208,6 +222,8 @@ In addition to the 12 use cases, two prompt-template tests were conducted throug
 
 1. Open VS Code Copilot Chat and type `/` to display the available prompt templates.
 2. Select `/link_impairment_test` or `/wifi_channel_test`.
+
+![Available MCP prompt templates](screenshots/prompts.png)
 3. Enter the requested parameters, such as host names, delay values, RSSI thresholds, or target channels.
 4. Copilot Agent Mode selects the appropriate MCP tools, executes the workflow, and reports the results.
 
@@ -224,6 +240,8 @@ In addition to the 12 use cases, two prompt-template tests were conducted throug
 
 **Status: PASS** — The workflow completed and the measured RTT increased after the delay was applied.
 
+![Link impairment prompt-template test](screenshots/prompt1.png)
+
 ### 5.3 Wi-Fi Channel Test
 
 **Prompt Template:** `wifi_channel_test`
@@ -236,6 +254,8 @@ In addition to the 12 use cases, two prompt-template tests were conducted throug
 - `ap1` switched to channel 11; the RSSI remained −36 dBm for both stations.
 
 **Status: PASS** — The RSSI condition was evaluated and the channel change was completed. No improvement in RSSI was observed.
+
+![Wi-Fi channel prompt-template test](screenshots/prompt2.png)
 
 ## 6. Summary
 
