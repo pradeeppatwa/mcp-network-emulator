@@ -58,18 +58,18 @@ All 12 use cases verified through VS Code Copilot Agent Mode using natural langu
 
 | Use Case | Description | Result |
 |----------|-------------|--------|
-| UC1a | Basic wired ping | RTT = 2.0ms ✅ |
-| UC1b | Delay on host interfaces | RTT = 205ms ✅ |
-| UC1c | Delay on switch-to-switch link | RTT = 205ms ✅ |
-| UC1d | Bandwidth + loss + routing table | All verified ✅ |
-| UC1e | Multi-switch iperf throughput | 10.8 Gbps ✅ |
-| UC2a | WiFi RSSI check, no channel change | Conditional reasoning correct ✅ |
-| UC2b | WiFi channel switch 1→11 | Stations remain connected ✅ |
-| UC2c | Multi-station wireless iperf | 7.92 Mbits/sec ✅ |
-| UC2d | Multi-AP station inventory | 2 stations per AP correct ✅ |
-| UC3a | Hybrid iperf wired→wireless | 1.22 Gbits/sec ✅ |
-| UC3b | Hybrid cross-segment delay | RTT 5ms → 102ms ✅ |
-| UC4 | IEEE 802.11s mesh topology | RTT = 0.269ms ✅ |
+| UC1a | Basic wired ping | RTT = 1.164 ms; 0% loss ✅ |
+| UC1b | Delay on host interfaces | RTT = 204.497 ms; 0% loss ✅ |
+| UC1c | Delay on switch-to-switch link | RTT = 205.926 ms; 0% loss ✅ |
+| UC1d | Bandwidth + packet loss configuration | 100 Mbps; 5% loss configured; ping loss 0% ✅ |
+| UC1e | Multi-switch iperf throughput | 44.5 Gbit/s measured ✅ |
+| UC2a | WiFi RSSI check, no channel change | RSSI −36 dBm; channel correctly unchanged ✅ |
+| UC2b | WiFi channel switch 1→11 | Both stations remained connected; RSSI −36 dBm ✅ |
+| UC2c | Multi-station wireless iperf | 7.93 and 7.92 Mbit/s measured ✅ |
+| UC2d | Multi-AP station inventory | 2 stations per AP; all RSSI −36 dBm ✅ |
+| UC3a | Hybrid iperf wired→wireless | 1.21 Gbit/s measured ✅ |
+| UC3b | Hybrid cross-segment delay | RTT 5.386 ms → 101.919 ms; 0% loss ✅ |
+| UC4 | IEEE 802.11s mesh topology | RTT = 0.120 ms; 0% loss; connectivity verified ✅ |
 
 See [docs/evaluation.md](docs/evaluation.md) for full results and prompts.
 
