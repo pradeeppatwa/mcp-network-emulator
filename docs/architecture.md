@@ -29,7 +29,7 @@ net object manages all node types simultaneously.
 
 ## Architecture Diagram
 
-![MCP Server Architecture](architecture-diagram.png)
+![MCP Server Architecture](screenshots/architecture-diagram.png)
 
 ---
 
