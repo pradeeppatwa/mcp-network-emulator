@@ -28,6 +28,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 
 **Status: PASS** — The topology was created and connectivity was verified.
 
+![UC1a: Basic Connectivity](screenshots/1a.png)
+
 ### UC1b: Delay on Host-Facing Links
 
 **Prompt:** Create a topology with two switches and two hosts. Apply 50ms delay on h1-s1 and h2-s2. Ping from h1 to h2 and confirm RTT reflects the delay
@@ -41,6 +43,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 - Average RTT: 204.497 ms; packet loss: 0%.
 
 **Status: PASS** — The delay configuration and connectivity test completed successfully.
+
+![UC1b: Delay on Host-Facing Links](screenshots/1b.png)
 
 ### UC1c: Delay on the Switch-to-Switch Link
 
@@ -56,6 +60,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 
 **Status: PASS** — The command workflow completed and RTT increased, although direct application of the delay to the inter-switch link was not verified.
 
+![UC1c: Delay on the Switch-to-Switch Link](screenshots/1c.png)
+
 ### UC1d: Bandwidth, Packet Loss, and Routing Table
 
 **Prompt:** Create a wired topology with 2 hosts and 1 switch. Set 100Mbps bandwidth and 5% packet loss on h1-s1. Ping from h1 to h2 and show the routing table of h1.
@@ -70,6 +76,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 
 **Status: PASS** — The settings were configured successfully, and connectivity was verified. The observed packet loss was 0% in this ping test.
 
+![UC1d: Bandwidth, Packet Loss, and Routing Table](screenshots/1d.png)
+
 ### UC1e: Topology Reporting and Throughput
 
 **Prompt:** Create a wired topology with 4 hosts and 2 switches. After creating the topology, show the actual topology, including all hosts, switches, and links. Then run an iperf throughput test between h1 and h3 and report the measured throughput.
@@ -83,6 +91,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 - The throughput test between `h1` and `h3` completed with a reported throughput of 44.5 Gbits/sec.
 
 **Status: PASS** — The topology was reported and the throughput test completed.
+
+![UC1e: Topology Reporting and Throughput](screenshots/1e.png)
 
 ## 2. Wireless Network Use Cases
 
