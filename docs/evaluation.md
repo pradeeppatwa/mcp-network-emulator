@@ -1,194 +1,269 @@
-# Evaluation Results
+# Evaluation
 
----
+## Overview
 
-## Evaluation Approach
+This section evaluates the MCP server for emulated networks through 12 use cases covering wired, wireless, hybrid, and mesh network scenarios. All use cases were evaluated through VS Code Copilot Agent Mode using natural-language prompts. No manual CLI commands, Python scripts, or direct API calls were used during the evaluation. The AI client selected the appropriate MCP tools, determined the sequence of tool calls, and interpreted the results.
 
-All 12 use cases were evaluated exclusively through VS Code Copilot Agent Mode
-using natural language prompts. No manual CLI commands, Python scripts, or
-direct API calls were used during evaluation. The AI client autonomously
-selected the appropriate MCP tools, determined the correct sequence of calls,
-and interpreted the results — demonstrating the core objective of the project.
+The evaluation covers topology creation, connectivity, link impairment, throughput measurement, Wi-Fi monitoring, channel configuration, and mesh connectivity. Two additional tests evaluate the MCP prompt templates `link_impairment_test` and `wifi_channel_test`.
 
-**Environment:** Ubuntu 24.04.4 LTS, single machine
+## 1. Wired Network Use Cases
 
-**Backend:** ramonfontes/containernet
+### UC1a: Basic Connectivity
 
-**AI Client:** VS Code Copilot Agent Mode (GitHub Copilot Free)
+**Prompt:**
 
----
+1. Create a wired topology with 2 hosts and 1 switch, then ping from h1 to h2.
 
-## Use Case Results
+**Topology:** Two hosts (`h1`, `h2`) connected to one switch (`s1`).
 
-### UC1a — Basic Wired Topology and Ping
+**Expected Result:** The topology is created successfully, and `h1` can communicate with `h2`.
 
-**Prompt:** "Create a wired topology with 2 hosts and 1 switch, then ping from h1 to h2."
+**Observed Result**
+- Ping from `h1` to `h2` succeeded.
+- Average RTT: 1.164 ms; packet loss: 0%.
 
-**Topology:** h1, h2, s1
+**Status: PASS** — The topology was created and connectivity was verified.
 
-**Result:** RTT = 2.0ms, 0% packet loss
+### UC1b: Delay on Host-Facing Links
 
-**Status:** ✅ PASS
+**Prompt:**
 
----
+2. Create a topology with two switches and two hosts. Apply 50ms delay on h1-s1 and h2-s2. Ping from h1 to h2 and confirm RTT reflects the delay
 
-### UC1b — Wired Delay on Host Interfaces
+**Topology:** Two hosts connected through two switches.
 
-**Prompt:** "Create a topology with two switches and two hosts. Apply 50ms delay on h1-s1 and h2-s2. Ping from h1 to h2 and confirm RTT reflects the delay."
+**Expected Result:** The topology is created, the specified delays are applied, and connectivity is verified.
 
-**Topology:** h1, h2, s1, s2
+**Observed Result**
+- A 50 ms delay was configured on the specified host-facing links.
+- Average RTT: 204.497 ms; packet loss: 0%.
 
-**Result:** RTT = 205ms, 0% packet loss
+**Status: PASS** — The delay configuration and connectivity test completed successfully.
 
-**Status:** ✅ PASS
+### UC1c: Delay on the Switch-to-Switch Link
 
----
+**Prompt:**
 
-### UC1c — Wired Delay on Switch-to-Switch Link
+3. Create a topology with two switches and two hosts. Add 100ms delay on the link between s1 and s2. Ping from h1 to h2 and tell me if the round-trip time reflects that delay.
 
-**Prompt:** "Create a topology with two switches and two hosts. Add 100ms delay on the link between s1 and s2. Ping from h1 to h2 and tell me if the round-trip time reflects that delay."
+**Topology:** Two hosts connected through two switches.
 
-**Topology:** h1, h2, s1, s2
+**Expected Result:** A 100 ms delay is applied to the inter-switch link, increasing the RTT between the hosts.
 
-**Result:** RTT = 205ms, 0% packet loss
+**Observed Result**
+- Average RTT: 208.484 ms; packet loss: 0%.
+- Implementation inspection indicated that `set_delay()` affected host-facing interfaces of the first switch rather than directly configuring the `s1–s2` link.
 
-**Status:** ✅ PASS
+**Status: PASS** — The command workflow completed and RTT increased, although direct application of the delay to the inter-switch link was not verified.
 
----
+### UC1d: Bandwidth, Packet Loss, and Routing Table
 
-### UC1d — Combined Link Impairment
+**Prompt:**
 
-**Prompt:** "Create a wired topology with 2 hosts and 1 switch. Set 100Mbps bandwidth and 5% packet loss on h1-s1. Ping from h1 to h2 and show the routing table of h1."
+4. Create a wired topology with 2 hosts and 1 switch. Set 100Mbps bandwidth and 5% packet loss on h1-s1. Ping from h1 to h2 and show the routing table of h1.
 
-**Topology:** h1, h2, s1
+**Topology:** Two hosts connected to one switch.
 
-**Result:** Bandwidth limited, 5% loss applied, routing table returned correctly
+**Expected Result:** The topology is created, the bandwidth and packet-loss settings are applied, connectivity is tested, and the routing table of `h1` is displayed.
 
-**Status:** ✅ PASS
+**Observed Result**
+- Bandwidth was configured at 100 Mbps and packet loss at 5%.
+- Ping RTT: 1.364 ms; observed packet loss: 0%.
 
----
+**Status: PASS** — The settings were configured successfully, and connectivity was verified. The observed packet loss was 0% in this ping test.
 
-### UC1e — Multi-Switch Wired Throughput
+### UC1e: Topology Reporting and Throughput
 
-**Prompt:** "Create a topology with 4 hosts across 2 switches. Run iperf between h1 and h3 and report the throughput."
+**Prompt:**
 
-**Topology:** h1, h2, h3, h4, s1, s2
+5. Create a wired topology with 4 hosts and 2 switches. After creating the topology, show the actual topology, including all hosts, switches, and links. Then run an iperf throughput test between h1 and h3 and report the measured throughput.
 
-**Result:** Throughput = 10.8 Gbps
+**Topology:** Four hosts connected through two switches.
 
-**Status:** ✅ PASS
+**Expected Result:** The topology and its links are reported, and throughput between `h1` and `h3` is measured.
 
----
+**Observed Result**
+- The topology contained links `h1–s1`, `h3–s1`, `s1–s2`, `h2–s2`, and `h4–s2`.
+- The throughput test between `h1` and `h3` completed with a reported throughput of 44.5 Gbits/sec.
 
-### UC2a — WiFi Signal Check, No Channel Change Needed
+**Status: PASS** — The topology was reported and the throughput test completed.
 
-**Prompt:** "Create a topology with one access point and two stations. Check signal strength. If any station RSSI is below -70dBm switch the channel."
+## 2. Wireless Network Use Cases
 
-**Topology:** ap1, sta1, sta2
+### UC2a: RSSI Threshold Monitoring
 
-**Result:** sta1 = -36dBm, sta2 = -36dBm. AI correctly decided NOT to switch channel — demonstrating conditional reasoning based on RSSI threshold.
+**Prompt:**
 
-**Status:** ✅ PASS
+6. Create a topology with one access point and two stations. Check signal strength. If any station RSSI is below -70dBm switch the channel
 
----
+**Topology:** One access point and two wireless stations.
 
-### UC2b — WiFi Channel Switch Verification
+**Expected Result:** The RSSI of both stations is checked. The channel changes only if a station's RSSI is below −70 dBm.
 
-**Prompt:** "Create a wireless topology with one AP and two stations. Check WiFi channel and signal strength. Switch ap1 to channel 11 and verify stations remain connected."
+**Observed Result**
+- Both stations reported an RSSI of −36 dBm, above the −70 dBm threshold.
+- The access point remained on channel 1.
 
-**Topology:** ap1, sta1, sta2
+**Status: PASS** — The RSSI threshold was evaluated and no channel change was required.
 
-**Result:** Channel switched 1→11, both stations remain connected at -36dBm
+### UC2b: Wi-Fi Channel Switching
 
-**Status:** ✅ PASS
+**Prompt:**
 
----
+7. Create a wireless topology with one AP and two stations. Check WiFi channel and signal strength. Switch ap1 to channel 11 and verify stations remain connected.
 
-### UC2c — Multi-Station Wireless Throughput
+**Topology:** One access point and two wireless stations.
 
-**Prompt:** "Create a wireless topology with one AP and three stations. Run iperf between sta1 and sta2, then sta1 and sta3. Compare throughput."
+**Expected Result:** The current channel and signal strengths are checked, `ap1` switches to channel 11, and both stations remain connected.
 
-**Topology:** ap1, sta1, sta2, sta3
+**Observed Result**
+- `ap1` changed from channel 1 to channel 11.
+- Both stations remained connected, with RSSI unchanged at −36 dBm.
 
-**Result:** sta1→sta2 = 7.92 Mbits/sec, sta1→sta3 = 7.92 Mbits/sec
+**Status: PASS** — The channel change and station connectivity were verified.
 
-**Status:** ✅ PASS
+### UC2c: Wireless Throughput Comparison
 
----
+**Prompt:**
 
-### UC2d — Multi-AP Inventory
+8. Create a wireless topology with one AP and three stations. Run iperf between sta1 and sta2, then sta1 and sta3. Compare throughput
 
-**Prompt:** "Create a wireless topology with two APs and four stations, two per AP. Check WiFi stats on both APs and summarise which stations are connected to which AP and their signal strength."
+**Topology:** One access point and three wireless stations.
 
-**Topology:** ap1, ap2, sta1, sta2, sta3, sta4
+**Expected Result:** Throughput is measured between `sta1–sta2` and `sta1–sta3` and compared.
 
-**Result:** sta1+sta3 on ap1, sta2+sta4 on ap2, all at -36dBm
+**Observed Result**
+- Throughput between `sta1` and `sta2`: 7.93 Mbit/s.
+- Throughput between `sta1` and `sta3`: 7.92 Mbit/s.
+- The measured difference was 0.01 Mbit/s.
 
-**Status:** ✅ PASS
+**Status: PASS** — Both throughput tests completed and their results were compared.
 
----
+### UC2d: Wi-Fi Station and Access-Point Statistics
 
-### UC3a — Hybrid Topology Throughput
+**Prompt:**
 
-**Prompt:** "Create a hybrid topology with two wired hosts on a switch and one AP with one station. Run iperf between h1 and sta1 and report throughput."
+9. Create a wireless topology with two APs and four stations, two per AP. Check WiFi stats on both APs and summarise which stations are connected to which AP and their signal strength.
 
-**Topology:** h1, h2, s1, ap1, sta1
+**Topology:** Two access points and four wireless stations, with two stations per access point.
 
-**Result:** Throughput = 1.22 Gbits/sec
+**Expected Result:** Statistics identify the stations connected to each access point and their signal strengths.
 
-**Status:** ✅ PASS
+**Observed Result**
+- `ap1` served `sta1` and `sta3`; `ap2` served `sta2` and `sta4`.
+- All four stations were associated, authenticated, and authorized.
+- All stations reported an RSSI of −36 dBm; both access points were on channel 1.
 
----
+**Status: PASS** — Station associations and Wi-Fi statistics were retrieved successfully.
 
-### UC3b — Hybrid Topology Cross-Segment Delay
+## 3. Hybrid Network Use Cases
 
-**Prompt:** "Create a hybrid topology. Ping h1 to sta1 for baseline RTT. Add 100ms delay on h1-s1. Ping again and confirm the RTT increased."
+### UC3a: Hybrid Network Throughput
 
-**Topology:** h1, h2, s1, ap1, sta1
+**Prompt:**
 
-**Result:** Baseline RTT = 5.268ms → After delay = 102.398ms
+10. Create a hybrid topology with two wired hosts on a switch and one AP with one station. Run iperf between h1 and sta1 and report throughput
 
-**Status:** ✅ PASS
+**Topology:** Two wired hosts connected to a switch, with an access point and one wireless station.
 
----
+**Expected Result:** The hybrid topology is created and throughput between `h1` and `sta1` is measured.
 
-### UC4 — IEEE 802.11s Mesh Topology
+**Observed Result**
+- The throughput test between `h1` and `sta1` completed with a reported throughput of 1.21 Gbit/s.
 
-**Prompt:** "Create a mesh topology with three wireless mesh nodes. Confirm that traffic can flow between sta1 and sta3 through the mesh network."
+**Status: PASS** — The hybrid topology was created and the throughput test completed.
 
-**Topology:** sta1, sta2, sta3 (IEEE 802.11s, channel 5, ssid meshNet)
+### UC3b: Delay and RTT Verification in a Hybrid Network
 
-**Result:** Ping sta1→sta3: RTT = 0.269ms, 0% packet loss
+**Prompt:**
 
-**Status:** ✅ PASS
+11. Create a hybrid topology. Ping h1 to sta1 for baseline RTT. Add 100ms delay on h1-s1. Ping again and confirm the RTT increased
 
----
+**Topology:** A hybrid network containing wired and wireless nodes.
 
-## Summary
+**Expected Result:** The baseline RTT is measured, a 100 ms delay is configured on `h1–s1`, and the RTT is measured again.
 
-| Category | Use Cases                     | Result      |
-|----------|-------------------------------|-------------|
-| Wired    | UC1a, UC1b, UC1c, UC1d, UC1e | 5/5 ✅      |
-| Wireless | UC2a, UC2b, UC2c, UC2d       | 4/4 ✅      |
-| Hybrid   | UC3a, UC3b                   | 2/2 ✅      |
-| Mesh     | UC4                          | 1/1 ✅      |
-| **Total**| **12 use cases**             | **12/12 ✅** |
+**Observed Result**
+- Baseline RTT: 5.386 ms.
+- RTT after applying the delay: 101.919 ms; packet loss: 0%.
+- The RTT increased by approximately 96.5 ms.
 
----
+**Status: PASS** — The RTT increased substantially after the delay was applied.
 
-## Latency Observations
+## 4. Mesh Network Use Case
 
-Approximate measurements on a single Ubuntu 24.04 machine.
+### UC4: Mesh Connectivity
 
-| Operation                            | Approximate Latency                          |
-|--------------------------------------|----------------------------------------------|
-| create_topology (wired)              | ~5 seconds                                   |
-| create_topology (wireless)           | ~15 seconds (includes WiFi association wait) |
-| create_topology (hybrid)             | ~20 seconds                                  |
-| create_topology (mesh)               | ~12 seconds                                  |
-| destroy_topology                     | ~3 seconds                                   |
-| set_delay / set_bandwidth / set_loss | ~1-2 seconds                                 |
-| ping                                 | ~2 seconds                                   |
-| run_iperf                            | ~8 seconds                                   |
-| set_channel                          | ~1 second                                    |
-| get_routing_table / get_wifi_stats   | ~1 second                                    |
+**Prompt:**
+
+12. Create a mesh topology with three wireless mesh nodes. Confirm that traffic can flow between sta1 and sta3 through the mesh network.
+
+**Topology:** Three wireless mesh nodes.
+
+**Expected Result:** Traffic flows successfully between `sta1` and `sta3` through the mesh network.
+
+**Observed Result**
+- Ping from `sta1` to `sta3` succeeded.
+- Average RTT: 0.120 ms; packet loss: 0%.
+
+**Status: PASS** — Connectivity between the endpoints was verified. The ping result alone does not establish that `sta2` forwarded the traffic as an intermediate relay.
+
+## 5. MCP Natural-Language Prompt Tests
+
+In addition to the 12 use cases, two prompt-template tests were conducted through VS Code Copilot Agent Mode to evaluate predefined workflows for link impairment and Wi-Fi channel configuration.
+
+### 5.1 Workflow
+
+1. Open VS Code Copilot Chat and type `/` to display the available prompt templates.
+2. Select `/link_impairment_test` or `/wifi_channel_test`.
+3. Enter the requested parameters, such as host names, delay values, RSSI thresholds, or target channels.
+4. Copilot Agent Mode selects the appropriate MCP tools, executes the workflow, and reports the results.
+
+### 5.2 Link Impairment Test
+
+**Prompt Template:** `link_impairment_test`
+
+**Objective:** Create a hybrid topology, measure baseline RTT, apply a 50 ms delay to `h1–s1`, and measure RTT again.
+
+**Observed Result**
+- Baseline RTT: 5.899 ms.
+- RTT after applying the delay: 52.101 ms.
+- The RTT increased by 46.202 ms; packet loss was 0% in both tests.
+
+**Status: PASS** — The workflow completed and the measured RTT increased after the delay was applied.
+
+### 5.3 Wi-Fi Channel Test
+
+**Prompt Template:** `wifi_channel_test`
+
+**Objective:** Evaluate station RSSI against a −30 dBm threshold and switch `ap1` to channel 11 if the condition is met.
+
+**Observed Result**
+- A wireless topology was created because no active topology existed.
+- Both stations reported an RSSI of −36 dBm, meeting the condition for channel switching.
+- `ap1` switched to channel 11; the RSSI remained −36 dBm for both stations.
+
+**Status: PASS** — The RSSI condition was evaluated and the channel change was completed. No improvement in RSSI was observed.
+
+## 6. Summary
+
+| Category  | Use Cases                    | Result |
+| --------- | ---------------------------- | ------ |
+| Wired     | UC1a, UC1b, UC1c, UC1d, UC1e | 5/5 ✅ |
+| Wireless  | UC2a, UC2b, UC2c, UC2d       | 4/4 ✅ |
+| Hybrid    | UC3a, UC3b                   | 2/2 ✅ |
+| Mesh      | UC4                          | 1/1 ✅ |
+| **Total** | **12 use cases**             | **12/12 ✅** |
+
+The evaluation demonstrated that the MCP server could execute the defined use cases through natural-language prompts and retrieve results across wired, wireless, hybrid, and mesh network scenarios. The two additional prompt-template tests also completed their intended workflows.
+
+### Observed Limitations
+
+- **Inter-switch delay:** UC1c showed an RTT increase, but direct configuration of the requested switch-to-switch link was not verified.
+- **Packet loss:** UC1d configured 5% packet loss, while the observed ping test reported 0% loss.
+- **Mesh forwarding:** UC4 verified endpoint connectivity, but did not establish that `sta2` acted as an intermediate relay.
+- **Measurement variability:** Throughput and RTT values represent individual test runs and may vary across runs.
+
+## 7. Conclusion
+
+The evaluation shows that natural-language interaction through VS Code Copilot Agent Mode can make common emulated-network operations accessible without requiring users to issue CLI commands or run scripts themselves. The results also highlight the importance of verifying the resulting network behaviour, rather than relying solely on successful tool execution, when evaluating network automation.

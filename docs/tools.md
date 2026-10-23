@@ -5,7 +5,7 @@
 
 ## Tools
 
-All tools require an active topology. Call `create_topology` first.
+Topology-dependent tools require an active topology. Call `create_topology` before using them. `create_topology` creates a topology, while `destroy_topology` stops and cleans up the active topology.
 
 | Tool              | Parameters                                    | Returns                              |
 |-------------------|-----------------------------------------------|--------------------------------------|
@@ -48,14 +48,22 @@ Reusable templates that guide the AI toward a structured experiment workflow.
 ## Notes
 
 **set_delay on switch-to-switch links:**
-When both nodes are OVS switches, delay is applied on host-facing interfaces
-instead. OVS kernel datapath bypasses tc netem on switch interfaces.
-RTT correctly reflects the configured delay.
+When both nodes are OVS switches, `set_delay()` applies the delay to
+host-facing interfaces of the first switch, rather than directly to the
+inter-switch link. In the tested topology, this increased the observed
+ping round-trip time. This result does not demonstrate that delay was
+applied directly to the switch-to-switch link.
 
 **run_iperf:**
 Uses direct node.cmd() approach instead of net.iperf(). net.iperf() hangs
 with Docker nodes due to telnet coordination issues.
 
 **get_wifi_stats channel:**
-Reads channel from ap.wintfs[0].channel which reflects runtime state.
-ap.params["channel"] becomes stale after set_channel() is called.
+Reads channel from `ap.wintfs[0].channel`, which reflects runtime state.
+`ap.params["channel"]` may become stale after `set_channel()` is called.
+
+**Error handling:**
+Tools may raise exceptions for invalid arguments, missing nodes, or
+unsupported operations. `get_routing_table()` and `get_wifi_stats()`
+return "No active topology." when called without an active topology.
+The exact behavior depends on the individual tool.

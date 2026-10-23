@@ -8,14 +8,15 @@ This project implements a three-layer architecture that connects an AI client
 to a real network emulation backend via the Model Context Protocol (MCP).
 The system enables a researcher to control and measure network topologies
 using natural language and no manual CLI commands or Python scripts required.
-This is believed to be the first integration of MCP with Containernet and
-Mininet-WiFi network emulation environments.
+This project integrates MCP with a network emulation environment combining
+Containernet and Mininet-WiFi capabilities.
 
 **Layer 1 — AI Client:**
 VS Code Copilot (primary) or Claude Desktop (secondary). The user types a
-natural language prompt. The AI client reads the registered MCP tool schemas,
-decides which tools to call and in what order, executes them, and presents
-the results automatically.
+natural language prompt. The AI client can use the registered MCP tool schemas
+to select tools,
+supply arguments, and execute operations based on the user's request.
+The exact workflow depends on the client and its configuration.
 
 **Layer 2 — MCP Server:**
 server.py exposes 10 tools, 3 resources, and 2 prompts to the AI client via
@@ -51,8 +52,9 @@ One Containernet() net object manages all of the following simultaneously:
 **Topology lifecycle:**
   IDLE -> create_topology() -> ACTIVE -> destroy_topology() -> IDLE
 
-All tools check topology state before executing. If called in IDLE state,
-they return a clear error message instead of crashing.
+Topology-dependent tools check whether a topology is active. Depending on
+the tool, an inactive topology may produce an error response or a returned
+message indicating that no topology is active.
 
 **Launch:**
   sudo python3 server.py
@@ -123,7 +125,7 @@ simulation without physical hardware. Load before wireless sessions:
 | run_iperf         | Both         | node.cmd() direct approach   |
 | set_channel       | Mininet-WiFi | ap.wintfs[0].setChannel()    |
 | get_routing_table | Containernet | node.cmd('ip route')         |
-| get_wifi_stats    | Mininet-WiFi | ap.cmd('iw dev station dump')|
+| get_wifi_stats    | Mininet-WiFi | AP channel + station dump    |
 
 ### 4.2 Resources (3) — read-only, no state change
 
@@ -148,20 +150,19 @@ simulation without physical hardware. Load before wireless sessions:
    The prompt describes the desired network operation in plain English,
    with no requirement to know tool names or parameters.
 
-2. **Copilot reads the registered tool schemas and decides which tools
-   to call, in what order, and with what arguments — autonomously.**
-   The AI interprets the intent and selects the correct sequence of
-   tools without any manual instruction.
+2. **Copilot can use the registered tool schemas to select tools and arguments.**
+   The client determines which tools to call and in what order based on
+   the user's request, the available tools, and the client configuration.
 
 3. **Each tool call is sent to server.py as a JSON-RPC 2.0 message over stdio.**
    The message contains the tool name and arguments in structured JSON.
    FastMCP handles protocol parsing and routes the call to the correct
    Python function.
 
-4. **server.py checks topology state before executing.**
-   If the topology is in IDLE state, the tool raises ValueError immediately:
-   "No active topology. Call create_topology() first."
-   This ensures no tool can operate against a non-existent network.
+4. **server.py checks topology state where required.**
+   Depending on the tool, an inactive topology may cause a ValueError
+   or return a message such as "No active topology." This prevents
+   topology-dependent operations from proceeding without an active network.
 
 5. **Tool function executes against the live Containernet backend.**
    The function retrieves node objects from the active net, performs the
@@ -185,11 +186,13 @@ eliminated backend switching logic, port conflicts, and duplicate net objects.
 One net.start() call brings up the entire topology regardless of type.
 
 ### OVS Kernel Datapath Bypass
-OVS uses a kernel-space datapath that bypasses Linux tc netem rules on
-switch-to-switch interfaces. The tc rule is written correctly but OVS never
-routes packets through it. Workaround: set_delay() detects when both nodes
-are OVSSwitch and applies the delay on host-facing interfaces instead,
-producing the correct RTT behavior as verified by ping.
+OVS switch-to-switch interfaces do not reliably apply the intended Linux
+tc netem delay in this setup. When set_delay() is called for two OVS switches,
+the implementation applies the delay to host-facing interfaces of the first
+switch rather than directly to the inter-switch link. In the tested topology,
+this increased the observed ping round-trip time. This verifies the workaround's
+effect in that test scenario; it does not demonstrate direct delay on the
+switch-to-switch link.
 
 ### run_iperf Direct Approach
 net.iperf() uses telnet coordination which hangs indefinitely with Docker
@@ -220,11 +223,11 @@ Three error categories are handled explicitly:
 "No active topology. Call create_topology() first."
 This guides the AI to call create_topology() before any other tool.
 
-**Argument errors:** A node name does not exist in the active topology
-or a parameter value is out of range. Returns the available node names
-so the AI can correct the call immediately.
+**Argument errors:** Invalid node names or parameter values can raise
+exceptions with explanatory messages. The specific response depends on
+the validation performed by the individual tool.
 
-**Backend errors:** The emulation itself fails — for example a Docker
-image not found or an OVS bridge conflict. The underlying error message
-is propagated in a structured response so the user knows exactly what
-failed.
+**Backend errors:** The emulation itself fails — for example, a Docker
+image is not found or an OVS bridge conflict occurs. Exceptions are recorded
+by the logging wrapper in `logs/calls.jsonl` and then re-raised. The MCP
+client determines how an exception is presented to the user.
