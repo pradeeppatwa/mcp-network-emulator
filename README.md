@@ -20,6 +20,8 @@ Three-layer architecture:
 - **Layer 2 — MCP Server:** server.py exposes 10 tools, 3 resources, and 2 prompts via JSON-RPC 2.0 over stdio transport.
 - **Layer 3 — Unified Backend:** ramonfontes/containernet manages Docker hosts, OVS switches, WiFi stations, and access points in one process.
 
+![MCP Server Architecture](docs/screenshots/architecture-diagram.png)
+
 See [docs/architecture.md](docs/architecture.md) for full details.
 
 ---
@@ -44,7 +46,7 @@ cd mcp-network-emulator && source venv/bin/activate
 sudo python3 server.py
 ```
 
-VS Code Copilot connects automatically via `.vscode/mcp.json`.
+VS Code Copilot connects automatically via `.vscode/mcp.json`. Once connected, you can use natural-language prompts and the available MCP prompt templates to run network workflows.
 
 Example prompt: `"Create a wired topology with 2 hosts and ping h1 to h2"`
 
@@ -85,7 +87,8 @@ mcp-network-emulator/
 └── docs/
     ├── architecture.md    # System architecture and technical decisions
     ├── tools.md           # Tool and resource reference
-    └── evaluation.md      # Use case results and latency observations
+    ├── evaluation.md      # Use case results and measurements
+    └── screenshots/       # Architecture and evaluation screenshots
 ```
 
 ---
