@@ -6,6 +6,12 @@ This section evaluates the MCP server for emulated networks through 12 use cases
 
 The evaluation covers topology creation, connectivity, link impairment, throughput measurement, Wi-Fi monitoring, channel configuration, and mesh connectivity. Two additional tests evaluate the MCP prompt templates `link_impairment_test` and `wifi_channel_test`.
 
+## MCP Server Connection
+
+The screenshot below shows that the MCP server is running and successfully connected to VS Code Copilot. This connection allows us to interact with the emulated network using natural-language prompts and test the available MCP tools directly from VS Code.
+
+![MCP server connected to VS Code](screenshots/mcp%20connected%20properly.png)
+
 ## 1. Wired Network Use Cases
 
 ### UC1a: Basic Connectivity
