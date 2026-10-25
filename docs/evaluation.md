@@ -48,7 +48,7 @@ The screenshot below shows that the MCP server is running and successfully conne
 
 ### UC1c: Delay on the Switch-to-Switch Link
 
-**Prompt:** Create a topology with two switches and two hosts. Add 100 ms delay on the link between s1 and s2. Ping from h1 to h2 and report the round-trip time.
+**Prompt:** Create a topology with two switches and two hosts. Add 100ms delay on the link between s1 and s2. Ping from h1 to h2 and tell me if the round-trip time reflects that delay.
 
 **Topology:** Two hosts connected through two switches.
 
