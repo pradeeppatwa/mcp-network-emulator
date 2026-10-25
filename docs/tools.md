@@ -48,11 +48,10 @@ Reusable templates that guide the AI toward a structured experiment workflow.
 ## Notes
 
 **set_delay on switch-to-switch links:**
-When both nodes are OVS switches, `set_delay()` applies the delay to
-host-facing interfaces of the first switch, rather than directly to the
-inter-switch link. In the tested topology, this increased the observed
-ping round-trip time. This result does not demonstrate that delay was
-applied directly to the switch-to-switch link.
+`set_delay()` applies the delay directly on the interface of the first node of
+the link, also when both nodes are OVS switches (for example `s1-eth2` for the
+link between s1 and s2). In UC1c, `tc qdisc` shows a 100 ms `netem` delay on
+`s1-eth2`, and the RTT between h1 and h2 increases accordingly.
 
 **run_iperf:**
 Uses direct node.cmd() approach instead of net.iperf(). net.iperf() hangs
