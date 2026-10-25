@@ -12,7 +12,7 @@ This project integrates MCP with a network emulation environment combining
 Containernet and Mininet-WiFi capabilities.
 
 **Layer 1 — AI Client:**
-VS Code Copilot (primary) or Claude Desktop (secondary) here, tested with VS Code Copilot. The user types a
+VS Code Copilot is used as the primary tool. The user types a
 natural language prompt. The AI client can use the registered MCP tool schemas
 to select tools,
 supply arguments, and execute operations based on the user's request.
