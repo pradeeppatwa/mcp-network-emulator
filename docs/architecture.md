@@ -12,7 +12,7 @@ This project integrates MCP with a network emulation environment combining
 Containernet and Mininet-WiFi capabilities.
 
 **Layer 1 — AI Client:**
-VS Code Copilot (primary) or Claude Desktop (secondary). The user types a
+VS Code Copilot (primary) or Claude Desktop (secondary) here, tested with VS Code Copilot. The user types a
 natural language prompt. The AI client can use the registered MCP tool schemas
 to select tools,
 supply arguments, and execute operations based on the user's request.
@@ -81,9 +81,7 @@ an isolated environment.
 
 **OVS (Open vSwitch):**
 Software-defined OpenFlow switch that forwards packets between Docker hosts.
-Managed by an OpenFlow controller (c0). Note: OVS uses a kernel-space
-datapath that bypasses Linux tc netem on switch-to-switch interfaces
-(see Section 6 for the workaround).
+Managed by an OpenFlow controller (c0).
 
 **DockerSta:**
 Docker container with a virtual WiFi interface provided by mac80211_hwsim.
@@ -185,14 +183,12 @@ backend combining both Containernet and Mininet-WiFi in one process. This
 eliminated backend switching logic, port conflicts, and duplicate net objects.
 One net.start() call brings up the entire topology regardless of type.
 
-### OVS Kernel Datapath Bypass
-OVS switch-to-switch interfaces do not reliably apply the intended Linux
-tc netem delay in this setup. When set_delay() is called for two OVS switches,
-the implementation applies the delay to host-facing interfaces of the first
-switch rather than directly to the inter-switch link. In the tested topology,
-this increased the observed ping round-trip time. This verifies the workaround's
-effect in that test scenario; it does not demonstrate direct delay on the
-switch-to-switch link.
+### Delay on Switch-to-Switch Links
+set_delay() applies the delay directly on the interface of the first node of
+the link, also when both nodes are OVS switches (for example s1-eth2 for the
+link between s1 and s2). In UC1c, tc qdisc shows a 100 ms netem delay on
+s1-eth2, while s2-eth2 and the host-facing interfaces show noqueue, and the RTT
+between h1 and h2 increases accordingly.
 
 ### run_iperf Direct Approach
 net.iperf() uses telnet coordination which hangs indefinitely with Docker
