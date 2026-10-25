@@ -63,7 +63,8 @@ The screenshot below shows that the MCP server is running and successfully conne
 **Status: PASS** — The delay was configured on the actual inter-switch link, and the ping test completed without packet loss.
 
 ![UC1c: Delay on the Switch-to-Switch Link](screenshots/1c.png)
-### UC1d: Bandwidth, Packet Loss, and Routing Table
+
+### UC1d: Bandwidth and Packet Loss
 
 **Prompt:** Create a wired topology with 2 hosts and 1 switch. Set 100 Mbps bandwidth and 5% packet loss on the h1-s1 link. Verify that both settings are applied successfully, then ping from h1 to h2.
 
@@ -77,7 +78,7 @@ The screenshot below shows that the MCP server is running and successfully conne
 
 **Status: PASS** — topology creation, configuration commands, and connectivity test completed successfully. The observed ping loss differed from the configured packet-loss rate.
 
-![UC1d: Bandwidth, Packet Loss, and Routing Table](screenshots/1d.png)
+![UC1d: Bandwidth and Packet Loss](screenshots/1d.png)
 
 ### UC1e: Topology Reporting and Throughput
 
